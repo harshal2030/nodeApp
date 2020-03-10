@@ -10,16 +10,48 @@ const keyPath = path.join(__dirname, '../keys/private.key')
 const privateKey = fs.readFileSync(keyPath ,'utf-8');
 
 class User extends Model {
-    generateAuthToken() {
+
+    static async findByCredentials(email, password) {
+        /*
+        * Checks if user exists with username and password
+        * @params {String} - email of the user
+        * @params {String} - password of the user 
+        */
+        const user = await User.findOne({where: {email}})
+
+        if (!user) {
+            throw new Error('Unable to login')
+        }
+
+        const pass = user.password
+        const hashedPass = sha512(password).toString()
+
+        if (pass !== hashedPass) {
+            throw new Error('Unable to login')
+        }
+
+        return user
+    }
+
+    async generateAuthToken() {
+        /*
+        * Returns a Auth token for a user
+        * @member {User}
+        * @returns {String} A token to be provided to user for authentication 
+        */
         const user = this;
 
-        const token = jwt.sign({username: user.username.toString()}, privateKey, {algorithm: 'RS256'});
+        const token = jwt.sign({username: user.username.toString()}, privateKey, {algorithm: 'RS256'})
         user.tokens.push(token)
-        user.save({fields: ['tokens']})
+        await user.save({fields: ['tokens']})
         return token;
     }
 
     removeSensetiveUserData() {
+        /*
+        * Returns user limited info i.e. Remove sensetive data
+        * @returns {Object} User info for transmission
+        */
         const user = this.toJSON();
 
         return {
@@ -87,10 +119,10 @@ User.init({
     },
 
     phone: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         validate: {
             checkPhoneNumber(value) {
-                if (!validator.isMobilePhoneNumber(value)) {
+                if (!validator.isMobilePhone(value)) {
                     throw new Error("Phone number is not valid")
                 }
             }
@@ -132,7 +164,7 @@ User.init({
 })
 
 const func = async () => {
-    await User.sync()
+    await User.sync({alter: true})
 }
 
 //func()
