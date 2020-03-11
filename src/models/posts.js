@@ -5,7 +5,7 @@ class Post extends Model {}
 
 Post.init({
     postId: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: false,
         unique: true
     },
@@ -49,6 +49,14 @@ Post.init({
     },
     mediaPath: {
         type: DataTypes.STRING,
+    },
+    likes: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    comments: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     sequelize,
@@ -60,6 +68,6 @@ Post.init({
 const func = async () => {
     Post.sync()
 }
-func()
+//func()
 
 module.exports = Post;
