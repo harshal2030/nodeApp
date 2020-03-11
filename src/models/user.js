@@ -59,7 +59,8 @@ class User extends Model {
             username: user.username,
             adm_num: user.adm_num,
             dob: user.dob,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
+            avatarPath: user.avatarPath
         }
     }
 }

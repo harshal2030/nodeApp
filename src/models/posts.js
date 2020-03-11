@@ -1,11 +1,10 @@
 const {Model, DataTypes} = require('sequelize');
 const sequelize = require('./../db')
-const validator = require('validator')
 
 class Post extends Model {}
 
 Post.init({
-    id: {
+    postId: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true
