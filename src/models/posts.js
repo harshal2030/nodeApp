@@ -5,7 +5,7 @@ class Post extends Model {}
 
 Post.init({
     postId: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING,
         allowNull: false,
         unique: true
     },
@@ -66,7 +66,7 @@ Post.init({
 })
 
 const func = async () => {
-    Post.sync()
+    await Post.sync({alter: true})
 }
 //func()
 

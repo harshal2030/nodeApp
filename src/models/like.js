@@ -5,7 +5,7 @@ class Like extends Model{}
 
 Like.init({
     postId: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     likedBy: {
@@ -40,5 +40,7 @@ Like.init({
 const func = async () => {
     await Like.sync();
 }
+
+func()
 
 module.exports = Like

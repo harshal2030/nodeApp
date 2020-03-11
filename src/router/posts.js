@@ -40,4 +40,19 @@ router.post('/posts', auth, upload.single('image'), async (req, res) => {
     res.status(201).send()
 })
 
+router.get('/posts/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+        const posts = await Post.findAll({where: {username}})
+
+        if (!posts) {
+            return res.status(404).send('No Posts yet')
+        }
+
+        res.send(posts)
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
 module.exports = router;
