@@ -23,21 +23,25 @@ const upload = multer({
 })
 
 router.post('/posts', auth, upload.single('image'), async (req, res) => {
-    post = JSON.parse(req.body.info);
-    post.username = req.user.username;
-    post['name'] = req.user.name;
-
-    if (req.file !== undefined) {
-        const filename = `${uuidv4()}.png`;
-        const filePath = postImgPath + '/' + filename;
-        await sharp(req.file.buffer).png().toFile(filePath);
-        post['mediaPath'] = filePath;
-        post['mediaIncluded'] = true;    
+    try {
+        post = JSON.parse(req.body.info);
+        post.username = req.user.username;
+        post['name'] = req.user.name;
+    
+        if (req.file !== undefined) {
+            const filename = `${uuidv4()}.png`;
+            const filePath = postImgPath + '/' + filename;
+            await sharp(req.file.buffer).png().toFile(filePath);
+            post['mediaPath'] = filePath;
+            post['mediaIncluded'] = true;    
+        }
+        console.log(post)
+    
+        await Post.create(post);
+        res.status(201).send()
+    } catch(e) {
+        res.status(400).send(e)
     }
-    console.log(post)
-
-    await Post.create(post);
-    res.status(201).send()
 })
 
 router.get('/posts/:username', async (req, res) => {

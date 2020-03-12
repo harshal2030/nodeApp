@@ -1,7 +1,12 @@
 const {DataTypes, Model} = require('sequelize');
 const sequelize = require('../db');
 
-class Like extends Model{}
+class Like extends Model{
+    /*
+    * Update the likes on any post
+    * Model for the likes table 
+    */
+}
 
 Like.init({
     postId: {
@@ -36,11 +41,5 @@ Like.init({
     modelName: 'likes',
     freezeTableName: true,
 })
-
-const func = async () => {
-    await Like.sync();
-}
-
-func()
 
 module.exports = Like

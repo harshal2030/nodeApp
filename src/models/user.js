@@ -10,13 +10,13 @@ const keyPath = path.join(__dirname, '../keys/private.key')
 const privateKey = fs.readFileSync(keyPath ,'utf-8');
 
 class User extends Model {
-
+    /** 
+    * Checks if user exists with username and password
+    * @param {String} email email of the user
+    * @param {String} password password of the user 
+    * @returns {Object} user with specified credentials
+    */
     static async findByCredentials(email, password) {
-        /*
-        * Checks if user exists with username and password
-        * @params {String} - email of the user
-        * @params {String} - password of the user 
-        */
         const user = await User.findOne({where: {email}})
 
         if (!user) {
@@ -33,12 +33,12 @@ class User extends Model {
         return user
     }
 
+    /**
+    * Returns a Auth token for a user
+    * @member {User}
+    * @returns {String} A token to be provided to user for authentication 
+    */
     async generateAuthToken() {
-        /*
-        * Returns a Auth token for a user
-        * @member {User}
-        * @returns {String} A token to be provided to user for authentication 
-        */
         const user = this;
 
         const token = jwt.sign({username: user.username.toString()}, privateKey, {algorithm: 'RS256'})
@@ -46,12 +46,11 @@ class User extends Model {
         await user.save({fields: ['tokens']})
         return token;
     }
-
+    /**
+    * Returns user limited info i.e. Remove sensetive data
+    * @returns {Object} User info for transmission
+    */
     removeSensetiveUserData() {
-        /*
-        * Returns user limited info i.e. Remove sensetive data
-        * @returns {Object} User info for transmission
-        */
         const user = this.toJSON();
 
         return {
@@ -64,10 +63,7 @@ class User extends Model {
         }
     }
 }
-/*
-* This a user model that validates th use before inserting in to the database
-* @param
-*/
+
 User.init({
     id: {
         type: DataTypes.INTEGER,
@@ -118,7 +114,6 @@ User.init({
         type: DataTypes.DATEONLY,
         allowNull: false,
     },
-
     phone: {
         type: DataTypes.STRING,
         validate: {
@@ -165,9 +160,9 @@ User.init({
 })
 
 const func = async () => {
-    await User.sync({alter: true})
+    await sequelize.sync()
 }
 
-//func()
+func()
 
 module.exports = User

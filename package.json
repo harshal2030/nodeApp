@@ -4,15 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js",
+    "test": "env-cmd ./config/test.env --watch --runInBand",
+    "dev": "env-cmd ./config/dev.env nodemon src/index.js",
     "start": "node src/index.js"
+  },
+  "jest": {
+    "testEnvironment": "node"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "crypto-js": "^4.0.0",
+    "env-cmd": "^8.0.2",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.2",
@@ -22,5 +26,9 @@
     "sharp": "^0.25.1",
     "uuid": "^7.0.2",
     "validator": "^12.2.0"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
   }
 }

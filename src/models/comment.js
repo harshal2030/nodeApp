@@ -1,7 +1,12 @@
 const {Model, DataTypes} = require('sequelize');
-const sequelize = require('./../db')
+const sequelize = require('../db')
 
-class Comment extends Model {}
+class Comment extends Model {
+    /*
+    * Insert the comment in table for any post
+    * Model for comments table
+    */
+}
 
 Comment.init({
     postId: {
@@ -43,9 +48,5 @@ Comment.init({
     modelName: 'comments',
     freezeTableName: true,
 })
-
-const func = async () => {
-    await Comment.sync()
-}
 
 module.exports = Comment
