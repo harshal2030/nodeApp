@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('./../middlewares/auth');
-const Post = require('./../models/posts');
+const Post = require('./../models/post');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
