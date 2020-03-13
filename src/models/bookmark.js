@@ -33,6 +33,6 @@ const func = async () => {
     await Bookmark.sync()
 }
 
-func()
+//func()
 
 module.exports = Bookmark

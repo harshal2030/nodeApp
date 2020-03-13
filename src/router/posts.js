@@ -5,6 +5,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
+const Bookmark = require('./../models/bookmark');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -60,6 +61,21 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
 })
 
 
+// POST /posts/misc?option=bookmark
+router.post('/posts/misc', auth, async (req, res) => {
+    try {
+        if (req.query.option === 'bookmark') {
+            await Bookmark.create({
+                postId: req.body.postId,
+                username: req.user.username
+            })
+            res.status(201).send()
+        }
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
 // GET /posts?skip = 0&limit = 20
 router.get('/posts', auth, async (req, res) => {
     /**
@@ -80,6 +96,15 @@ router.get('/posts', auth, async (req, res) => {
     } catch (e) {
         console.log(e)
         res.status(400).send()
+    }
+})
+
+// GET /posts/misc/bookmark
+router.get('/posts/misc/', auth, async (req, res) => {
+    try {
+
+    } catch (e) {
+
     }
 })
 

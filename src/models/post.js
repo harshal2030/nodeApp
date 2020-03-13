@@ -2,6 +2,7 @@ const {Model, DataTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
 const Comment = require('./comment')
+const Bookmark = require('./bookmark')
 /**
  * Initiates the Post model for the app
  * @class Post 
@@ -40,21 +41,44 @@ class Post extends Model {
     * @param {String} username username of the user 
     * @param {number} [skip] skips after end reached in frontend
     * @param {number} [limit] no. of post to be returned on each call
+    * 
+    * @returns {Array} array of posts for user feed
     */
     static async getUserFeed(username, skip = 0, limit = 20) {
-    const posts = await Post.findAll({
-        where: {
-            username
-        },
-        order: [
-            ['createdAt', 'DESC']
-        ],
-        offset: skip,
-        limit
-    })
+        const posts = await Post.findAll({
+            where: {
+                username
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            offset: skip,
+            limit
+        })
 
-    return posts
-}
+        return posts
+    }
+
+    /**
+     * Function that fetch miscs from database for specified user
+     * 
+     * @param {String} username miscs belonging to user
+     * @param {String} [option] misc options to be performed, example get all bookmarks
+     * 
+     * @returns {Array} bookmarks of a user else null 
+     */
+    static async getUserMiscs(username, option = 'bookmark') {
+        let out;
+        if (option === 'bookmark') {
+            out = Bookmark.findAll({
+                where: {
+                    username
+                }
+            })
+        }
+
+        return out;
+    }
 }
 
 Post.init({
