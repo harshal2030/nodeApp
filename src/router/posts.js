@@ -5,19 +5,16 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
-const fs = require('fs');
-const ffmpeg = require('fluent-ffmpeg');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
-const postVideoPath = path.join(__dirname, './../../public/videos/posts')
 
 const upload = multer({
     limits: {
         fileSize: 200 * 1000000
     },
     fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|mp4|mkv)$/)) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
             return cb(Error("Unsupported files uploaded to the server"))
         }
 
@@ -31,38 +28,68 @@ const mediaMiddleware = upload.fields([
 ])
 
 router.post('/posts', auth, mediaMiddleware, async (req, res) => {
+    /**
+     * Route for posting the post from user.
+     * user info from auth middleware (req.body)
+     * Current token from auth middleware (req.token)
+     * name for image = image
+     * post info contained in req.body.info
+     * imagePath: public/images/post
+     * 201 for success
+     */
     try {
-        post = JSON.parse(req.body.info);
+        post = JSON.parse(req.body.info); // post info
         post.username = req.user.username;
         post['name'] = req.user.name;
         
         const file = req.files;
-        console.log(file.video);
-        if (file.image[0] !== undefined) {
+        if (file.image !== undefined) {
+            console.log('if of imAGE')
             const filename = `${uuidv4()}.png`;
             const filePath = postImgPath + '/' + filename;
             await sharp(file.image[0].buffer).png().toFile(filePath);
-            post['mediaPath'] = filePath;
+            post['mediaPath'] = '/images/posts/' + filename;
             post['mediaIncluded'] = true;    
-        } else if (file.video[0] !== undefined) {
-            stream = fs.createWriteStream('steam.divx')
-            const filename = `${uuidv4()}.mp4`
-            const filePath = postVideoPath + '/' +filename;
-            await ffmpeg(file.video[0].buffer).output(filePath).output(stream)
-            post['mediaPath'] = filePath;
-            post['mediaIncluded'] = true; 
         }
-
-        console.log(post)
-    
         await Post.create(post);
         res.status(201).send()
     } catch(e) {
+        console.log(e)
         res.status(400).send(e)
     }
 })
 
+
+// GET /posts?skip = 0&limit = 20
+router.get('/posts', auth, async (req, res) => {
+    /**
+     * Route for home feed of a user
+     * Full function in posts
+     */
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+    try {
+        console.log(req.user);
+        const posts = await Post.getUserFeed(req.user.username, skip, limit)
+        const data = []
+        for(let i=0; i<posts.length; i++) {
+            data.push({type: 'NORMAL', item: posts[i]})
+            posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
+        }
+        res.send(data)
+    } catch (e) {
+        console.log(e)
+        res.status(400).send()
+    }
+})
+
+
 router.get('/posts/:username', async (req, res) => {
+    /**
+     * Route for posts of a user (req.params.username)
+     * 404 if no posts
+     * 200 with atleast one post
+     */
     try {
         const username = req.params.username;
         const posts = await Post.findAll({where: {username}})

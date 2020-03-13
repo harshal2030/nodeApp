@@ -2,9 +2,8 @@ const {Model, DataTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
 const Comment = require('./comment')
-const uuidv4 = require('uuid/v4');
 /**
- * Inatiates the Post model for the app
+ * Initiates the Post model for the app
  * @class Post 
  */
 class Post extends Model {
@@ -35,6 +34,27 @@ class Post extends Model {
         Comment.create({postId, commentBy, commentValue, postedBy});
         Post.increment({comments: 1}, {where: {postId}});
     }
+
+    /**
+    * Get the feed for a user.
+    * @param {String} username username of the user 
+    * @param {number} [skip] skips after end reached in frontend
+    * @param {number} [limit] no. of post to be returned on each call
+    */
+    static async getUserFeed(username, skip = 0, limit = 20) {
+    const posts = await Post.findAll({
+        where: {
+            username
+        },
+        order: [
+            ['createdAt', 'DESC']
+        ],
+        offset: skip,
+        limit
+    })
+
+    return posts
+}
 }
 
 Post.init({
@@ -42,7 +62,7 @@ Post.init({
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
-        defaultValue: uuidv4()
+        defaultValue: DataTypes.UUIDV4
     },
     username: {
         type: DataTypes.STRING,
@@ -68,9 +88,6 @@ Post.init({
     },
     title: {
         type: DataTypes.STRING,
-        validate: {
-            max: 25
-        }
     },
     description: {
         type: DataTypes.STRING,
