@@ -60,24 +60,59 @@ class Post extends Model {
     }
 
     /**
-     * Function that fetch miscs from database for specified user
+     * returns the bookmarks of a specified user.
      * 
-     * @param {String} username miscs belonging to user
-     * @param {String} [option] misc options to be performed, example get all bookmarks
+     * @param {String} username user to whom bookmarks belong
      * 
-     * @returns {Array} bookmarks of a user else null 
+     * @returns {Array} array of bookmarks 
      */
-    static async getUserMiscs(username, option = 'bookmark') {
-        let out;
-        if (option === 'bookmark') {
-            out = Bookmark.findAll({
+    static async getUserBookmarks(username) {
+        const result = await sequelize.query('SELECT '+
+                'posts."postId", posts."username", posts."name", posts."title", posts."description", '+
+                'posts."mediaIncluded", posts."mediaPath", posts."likes", posts."comments" ' + 
+                'FROM posts ' + 
+                'INNER JOIN bookmarks ON ' +
+                'posts."postId" = bookmarks."postId" ' +
+                'WHERE bookmarks."username" = :username ' +
+                'ORDER BY bookmarks."createdAt" DESC',
+                {
+                    replacements: {username: username},
+                    raw: true
+                }
+            )
+
+            return result[0]
+    }
+
+    /**
+     * Add a bookmark post if not present to bookmarks table else remove it
+     * 
+     * @param {String} username username of the user who requested add 
+     * @param {String} postId post id to be added to bookmark
+     * 
+     * @returns {Boolean} whether bookmark is created or not
+     */
+    static async addBookmark(username, postId) {
+        const bookmarks = await Bookmark.count({
+            where: {
+                username,
+                postId
+            }
+        })
+        console.log(bookmarks)
+
+        if (bookmarks === 0) {
+            Bookmark.create({postId, username})
+        } else {
+            Bookmark.destroy({
                 where: {
-                    username
+                    username,
+                    postId
                 }
             })
         }
 
-        return out;
+        return bookmarks === 0 ? true : false;
     }
 }
 

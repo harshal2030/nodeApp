@@ -5,7 +5,6 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
-const Bookmark = require('./../models/bookmark');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -65,11 +64,12 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
 router.post('/posts/misc', auth, async (req, res) => {
     try {
         if (req.query.option === 'bookmark') {
-            await Bookmark.create({
-                postId: req.body.postId,
-                username: req.user.username
-            })
-            res.status(201).send()
+            const bookmarkAdded = await Post.addBookmark(req.user.username, req.body.postId)
+            if (bookmarkAdded) {
+                res.status(201).send()
+            } else { // will get removed automatically
+                res.status(403).send()
+            }
         }
     } catch (e) {
         res.status(400).send(e)
@@ -99,12 +99,20 @@ router.get('/posts', auth, async (req, res) => {
     }
 })
 
-// GET /posts/misc/bookmark
+// GET /posts/misc?option=bookmark
 router.get('/posts/misc/', auth, async (req, res) => {
     try {
-
+        if (req.query.option === 'bookmark') {
+            const bookmarks = await Post.getUserBookmarks(req.user.username)
+            const data = []
+            for(let i=0; i<bookmarks.length; i++) {
+                bookmarks[i].mediaPath = 'http://192.168.43.26:3000' + bookmarks[i].mediaPath
+                data.push({type: 'NORMAL', item: bookmarks[i]})
+            }
+            res.send(data)
+        }
     } catch (e) {
-
+        res.status(500).send()
     }
 })
 
