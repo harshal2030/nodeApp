@@ -11,7 +11,7 @@ const postImgPath = path.join(__dirname, '../../public/images/posts')
 
 const upload = multer({
     limits: {
-        fileSize: 200 * 1000000
+        fileSize: 20 * 1000000
     },
     fileFilter(req, file, cb) {
         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
@@ -62,6 +62,11 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
 
 // POST /posts/misc?option=bookmark
 router.post('/posts/misc', auth, async (req, res) => {
+    /**
+     * Route for adding misc to database
+     * 201 for success
+     * 403 for success
+     */
     try {
         if (req.query.option === 'bookmark') {
             const bookmarkAdded = await Post.addBookmark(req.user.username, req.body.postId)
@@ -81,11 +86,11 @@ router.get('/posts', auth, async (req, res) => {
     /**
      * Route for home feed of a user
      * Full function in posts
+     * 200 for success
      */
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        console.log(req.user);
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
         const data = []
         for(let i=0; i<posts.length; i++) {
@@ -101,6 +106,10 @@ router.get('/posts', auth, async (req, res) => {
 
 // GET /posts/misc?option=bookmark
 router.get('/posts/misc/', auth, async (req, res) => {
+    /**
+     * Route to fetch user misc posts
+     * 200 success
+     */
     try {
         if (req.query.option === 'bookmark') {
             const bookmarks = await Post.getUserBookmarks(req.user.username)

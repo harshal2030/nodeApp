@@ -22,8 +22,8 @@ class Post extends Model {
     }
 
     /**
-     * -Updates the comment table
-     * -Increment the comments in post table
+     * Updates the comment table
+     * Increment the comments in post table
      * 
      * @param {String} postId uuidv4 of the post
      * @param {String} commentBy author of the comment
@@ -66,10 +66,13 @@ class Post extends Model {
      * 
      * @returns {Array} array of bookmarks 
      */
-    static async getUserBookmarks(username) {
+    static async getUserBookmarks(username, fields = ['postId']) {
+        if (!Array.isArray(fields)) {
+            throw new Error('Expected array. Got ' + typeof fields);
+        }
+
         const result = await sequelize.query('SELECT '+
-                'posts."postId", posts."username", posts."name", posts."title", posts."description", '+
-                'posts."mediaIncluded", posts."mediaPath", posts."likes", posts."comments" ' + 
+                'posts.*' + 
                 'FROM posts ' + 
                 'INNER JOIN bookmarks ON ' +
                 'posts."postId" = bookmarks."postId" ' +
@@ -103,6 +106,11 @@ class Post extends Model {
 
         if (bookmarks === 0) {
             Bookmark.create({postId, username})
+            sequelize.query('UPDATE posts SET "markedByAuthor"=true WHERE "postId"=:postid AND "username"=:username',
+                    {
+                        replacements: {postid: postId, username: username},
+                        raw: true
+                    })
         } else {
             Bookmark.destroy({
                 where: {
@@ -110,6 +118,11 @@ class Post extends Model {
                     postId
                 }
             })
+            sequelize.query('UPDATE posts SET "markedByAuthor"=false WHERE "postId"=:postid AND "username"=:username',
+                    {
+                        replacements: {postid: postId, username: username},
+                        raw: true
+                    })
         }
 
         return bookmarks === 0 ? true : false;
@@ -168,6 +181,14 @@ Post.init({
     comments: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    likedByAuthor: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    markedByAuthor: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     }
 }, {
     sequelize,
@@ -175,5 +196,10 @@ Post.init({
     modelName: 'posts',
     freezeTableName: true
 })
+
+const func = async () => {
+    Post.sync({alter: true})
+}
+//func()
 
 module.exports = Post;
