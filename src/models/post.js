@@ -52,6 +52,7 @@ class Post extends Model {
             order: [
                 ['createdAt', 'DESC']
             ],
+            raw: true,
             offset: skip,
             limit
         })
@@ -106,11 +107,6 @@ class Post extends Model {
 
         if (bookmarks === 0) {
             Bookmark.create({postId, username})
-            sequelize.query('UPDATE posts SET "markedByAuthor"=true WHERE "postId"=:postid AND "username"=:username',
-                    {
-                        replacements: {postid: postId, username: username},
-                        raw: true
-                    })
         } else {
             Bookmark.destroy({
                 where: {
@@ -118,11 +114,6 @@ class Post extends Model {
                     postId
                 }
             })
-            sequelize.query('UPDATE posts SET "markedByAuthor"=false WHERE "postId"=:postid AND "username"=:username',
-                    {
-                        replacements: {postid: postId, username: username},
-                        raw: true
-                    })
         }
 
         return bookmarks === 0 ? true : false;
@@ -183,10 +174,6 @@ Post.init({
         defaultValue: 0
     },
     likedByAuthor: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
-    markedByAuthor: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     }

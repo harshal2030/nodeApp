@@ -5,6 +5,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
+const Bookmark = require('./../models/bookmark');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -93,13 +94,26 @@ router.get('/posts', auth, async (req, res) => {
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
         const data = []
+        const bookmark = await Bookmark.findAll({
+            where: {
+                username: req.user.username
+            },
+            attributes: ['postId'],
+            raw: true
+        }).then(result => result.map(i => i.postId));
+        
+
         for(let i=0; i<posts.length; i++) {
             data.push({type: 'NORMAL', item: posts[i]})
             posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
+            if (bookmark.includes(posts[i].postId)) {
+                posts[i]['bookmarked'] = true
+            } else {
+                posts[i]['bookmarked'] = false
+            }
         }
         res.send(data)
     } catch (e) {
-        console.log(e)
         res.status(400).send()
     }
 })
@@ -116,6 +130,7 @@ router.get('/posts/misc/', auth, async (req, res) => {
             const data = []
             for(let i=0; i<bookmarks.length; i++) {
                 bookmarks[i].mediaPath = 'http://192.168.43.26:3000' + bookmarks[i].mediaPath
+                bookmarks[i].bookmarked = true;
                 data.push({type: 'NORMAL', item: bookmarks[i]})
             }
             res.send(data)
