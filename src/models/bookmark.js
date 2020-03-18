@@ -21,6 +21,10 @@ Bookmark.init({
                 msg: 'Invalid username pattern'
             }
         }
+    },
+    postDate: {
+        type: DataTypes.DATE,
+        allowNull: false,
     }
 }, {
     sequelize,
@@ -30,7 +34,7 @@ Bookmark.init({
 })
 
 const func = async () => {
-    await Bookmark.sync()
+    await Bookmark.sync({alter: true})
 }
 
 //func()

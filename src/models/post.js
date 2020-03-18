@@ -64,28 +64,52 @@ class Post extends Model {
      * returns the bookmarks of a specified user.
      * 
      * @param {String} username user to whom bookmarks belong
+     * @param {number} [skip] skips after end reached in frontend
+     * @param {number} [limit] no. of post to be returned on each call
      * 
      * @returns {Array} array of bookmarks 
      */
-    static async getUserBookmarks(username, fields = ['postId']) {
-        if (!Array.isArray(fields)) {
-            throw new Error('Expected array. Got ' + typeof fields);
-        }
+    static async getUserBookmarks(username, skip=0, limit=20) {
 
-        const result = await sequelize.query('SELECT '+
-                'posts.*' + 
-                'FROM posts ' + 
-                'INNER JOIN bookmarks ON ' +
-                'posts."postId" = bookmarks."postId" ' +
-                'WHERE bookmarks."username" = :username ' +
-                'ORDER BY bookmarks."createdAt" DESC',
+        const query = 'SELECT '+
+            'posts.*' + 
+            'FROM posts ' + 
+            'INNER JOIN bookmarks ON ' +
+            'posts."postId" = bookmarks."postId" ' +
+            'WHERE bookmarks."username" = :username ' +
+            'ORDER BY bookmarks."createdAt" DESC OFFSET :skip LIMIT :limit;'
+        
+
+        const result = await sequelize.query(query,
                 {
-                    replacements: {username: username},
+                    replacements: {username, skip, limit},
                     raw: true
                 }
             )
 
             return result[0]
+    }
+
+    /**
+     * Get ids of the bookmarks of specified user. 
+     * 
+     * @param {String} username username of user requested
+     * @param {number} [skip] skips after end reached in frontend 
+     * @param {limit} [limit] no. of bookmarks returned on each call
+     */
+    static async getUserBookmarksIds(username, skip=0, limit=20) {
+        const query = 'SELECT sub1."postId" FROM ' + 
+            '(SELECT posts.* FROM posts ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit) '+
+            'as sub1 INNER JOIN bookmarks '+
+            'ON bookmarks."postId" = sub1."postId"'+
+            ' AND bookmarks."postDate"=sub1."createdAt" WHERE bookmarks."username"=:username;';
+
+        const results = await sequelize.query(query, {
+            replacements: {username, skip, limit},
+            raw: true
+        })
+
+        return results[0].map(j => j.postId)
     }
 
     /**
@@ -106,7 +130,14 @@ class Post extends Model {
         console.log(bookmarks)
 
         if (bookmarks === 0) {
-            Bookmark.create({postId, username})
+            const postDate = await Post.findOne({
+                where: {
+                    postId
+                },
+                attributes: ['createdAt'],
+                raw: true
+            })
+            Bookmark.create({postId, username, postDate: postDate.createdAt});
         } else {
             Bookmark.destroy({
                 where: {
@@ -173,10 +204,6 @@ Post.init({
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
-    likedByAuthor: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    }
 }, {
     sequelize,
     timestamps: true,
