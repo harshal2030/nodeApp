@@ -15,13 +15,6 @@ Friend.init({
             }
         }
     },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            len: [4, 50]
-        }
-    },
     followed_username: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -33,13 +26,6 @@ Friend.init({
             }
         }
     },
-    followed_name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            len: [4, 50]
-        }
-    }
 }, {
     sequelize,
     timestamps: true,

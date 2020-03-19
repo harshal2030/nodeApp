@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const sha512 = require('crypto-js/sha512')
 const fs = require('fs')
 const path = require('path')
+const Friend = require('./friend');
 
 const keyPath = path.join(__dirname, '../keys/private.key')
 const privateKey = fs.readFileSync(keyPath ,'utf-8');
@@ -31,6 +32,11 @@ class User extends Model {
         }
 
         return user
+    }
+
+    static async addFriend(username, followed_username) {
+        const result = await Friend.create({username, followed_username});
+        console.log(result);
     }
 
     /**
@@ -163,6 +169,6 @@ const func = async () => {
     await sequelize.sync()
 }
 
-//func()
+func()
 
 module.exports = User

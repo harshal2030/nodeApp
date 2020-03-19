@@ -5,6 +5,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
+const Bookmark = require('./../models/bookmark');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -69,7 +70,7 @@ router.post('/posts/misc', auth, async (req, res) => {
      */
     try {
         if (req.query.option === 'bookmark') {
-            const bookmarkAdded = await Post.addBookmark(req.user.username, req.body.postId)
+            const bookmarkAdded = await Bookmark.addBookmark(req.user.username, req.body.postId)
             if (bookmarkAdded) {
                 res.status(201).send()
             } else { // will get removed automatically
@@ -93,19 +94,20 @@ router.get('/posts', auth, async (req, res) => {
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
         const data = []
-        const bookmark = await Post.getUserBookmarksIds(req.user.username, skip, limit);
+        const bookmark = await Bookmark.getUserBookmarksIds(req.user.username, skip, limit);
         
 
         for(let i=0; i<posts.length; i++) {
             data.push(posts[i])
             posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
+            posts[i].avatarPath = 'http://192.168.43.26:3000/' + posts[i].avatarPath;
             if (bookmark.includes(posts[i].postId)) {
                 posts[i]['bookmarked'] = true
             } else {
                 posts[i]['bookmarked'] = false
             }
         }
-        res.send(data)
+        res.send(data);
     } catch (e) {
         res.status(400).send(e)
     }
@@ -121,9 +123,10 @@ router.get('/posts/misc/', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? 20 : parseInt(req.query.limit);
     try {
         if (req.query.option === 'bookmark') {
-            const bookmarks = await Post.getUserBookmarks(req.user.username, skip, limit);
+            const bookmarks = await Bookmark.getUserBookmarks(req.user.username, skip, limit);
             for (let i=0; i<bookmarks.length; i++) {
                 bookmarks[i].mediaPath = 'http://192.168.43.26:3000'+bookmarks[i].mediaPath;
+                bookmarks[i].avatarPath = 'http://192.168.43.26:3000/'+bookmarks[i].avatarPath;
                 bookmarks[i].bookmarked = true;
             }
             res.send(bookmarks);
