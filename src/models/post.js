@@ -97,6 +97,9 @@ Post.init({
     },
     title: {
         type: DataTypes.STRING,
+        validate: {
+            min: 1,
+        }
     },
     description: {
         type: DataTypes.STRING,

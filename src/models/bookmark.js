@@ -6,7 +6,7 @@ const Post = require('./post');
  * @class Bookmark
 */
 class Bookmark extends Model {
-        /**
+    /**
      * returns the bookmarks of a specified user.
      * 
      * @param {String} username user to whom bookmarks belong
@@ -45,6 +45,8 @@ class Bookmark extends Model {
      * @param {String} username username of user requested
      * @param {number} [skip] skips after end reached in frontend 
      * @param {limit} [limit] no. of bookmarks returned on each call
+     * 
+     * @returns {Array} array of bookmarks limited wrt to posts
      */
     static async getUserBookmarksIds(username, skip=0, limit=20) {
         const query = 'SELECT sub1."postId" FROM ' + 

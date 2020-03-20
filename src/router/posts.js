@@ -60,28 +60,6 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
     }
 })
 
-
-// POST /posts/misc?option=bookmark
-router.post('/posts/misc', auth, async (req, res) => {
-    /**
-     * Route for adding misc to database
-     * 201 for success
-     * 403 for success
-     */
-    try {
-        if (req.query.option === 'bookmark') {
-            const bookmarkAdded = await Bookmark.addBookmark(req.user.username, req.body.postId)
-            if (bookmarkAdded) {
-                res.status(201).send()
-            } else { // will get removed automatically
-                res.status(403).send()
-            }
-        }
-    } catch (e) {
-        res.status(400).send(e)
-    }
-})
-
 // GET /posts?skip = 0&limit = 20
 router.get('/posts', auth, async (req, res) => {
     /**
@@ -113,47 +91,31 @@ router.get('/posts', auth, async (req, res) => {
     }
 })
 
-// GET /posts/misc?option=bookmark&skip=0&limit=20
-router.get('/posts/misc/', auth, async (req, res) => {
-    /**
-     * Route to fetch user misc posts
-     * 200 success
-     */
-    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
-    const limit = req.query.limit === undefined ? 20 : parseInt(req.query.limit);
-    try {
-        if (req.query.option === 'bookmark') {
-            const bookmarks = await Bookmark.getUserBookmarks(req.user.username, skip, limit);
-            for (let i=0; i<bookmarks.length; i++) {
-                bookmarks[i].mediaPath = 'http://192.168.43.26:3000'+bookmarks[i].mediaPath;
-                bookmarks[i].avatarPath = 'http://192.168.43.26:3000/'+bookmarks[i].avatarPath;
-                bookmarks[i].bookmarked = true;
-            }
-            res.send(bookmarks);
-        }
-    } catch (e) {
-        res.status(500).send(e)
-    }
-})
 
-
+// GET /posts/username?skip=0&limit=20
 router.get('/posts/:username', async (req, res) => {
     /**
      * Route for posts of a user (req.params.username)
      * 404 if no posts
      * 200 with atleast one post
      */
+    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
     try {
         const username = req.params.username;
-        const posts = await Post.findAll({where: {username}})
+        const posts = await Post.findAll({
+            where: {username},
+            offset: skip,
+            limit,
+            order: [['createdAt', 'DESC']]
+        })
 
         if (!posts) {
             return res.status(404).send('No Posts yet')
         }
-
         res.send(posts)
     } catch (e) {
-        res.status(400).send(e)
+        res.status(500).send(e)
     }
 })
 
