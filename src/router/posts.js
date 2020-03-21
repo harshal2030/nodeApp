@@ -103,20 +103,23 @@ router.get('/posts/:username', async (req, res) => {
     const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
     try {
         const username = req.params.username;
-        const posts = await Post.findAll({
-            where: {username},
-            offset: skip,
-            limit,
-            order: [['createdAt', 'DESC']]
-        })
+        const posts = await Post.getUserPosts(username, skip, limit);
 
         if (!posts) {
             return res.status(404).send('No Posts yet')
+        }
+        for (let i=0; i<posts.length; i++) {
+            posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
+            posts[i].avatarPath = 'http://192.168.43.26:3000/' + posts[i].avatarPath;
         }
         res.send(posts)
     } catch (e) {
         res.status(500).send(e)
     }
+})
+
+router.get('/posts/trends/:username', auth, (req, res) => {
+    res.send('coming soon');
 })
 
 module.exports = router;

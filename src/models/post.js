@@ -64,6 +64,31 @@ class Post extends Model {
 
         return result[0];
     }
+
+    /**
+     * Get posts of a user 
+     * 
+     * @param {String} username username of user
+     * @param {number} [skip]skips after end is reached
+     * @param {number} [limit] no. of posts to returned on each call
+     * 
+     * @returns {Array} array of posts of auser 
+     */
+    static async getUserPosts(username, skip=0, limit=10) {
+        const query = `SELECT users."avatarPath", foo.* FROM 
+            (SELECT * FROM posts WHERE posts."username"=:username)
+            AS foo
+            INNER JOIN users ON
+            users."username" = foo."username" 
+            ORDER BY foo."createdAt" DESC OFFSET :skip LIMIT :limit`;
+
+        const result = await sequelize.query(query, {
+            replacements: {username, skip, limit},
+            raw: true,
+        })
+
+        return result[0];
+    }
 }
 
 Post.init({
