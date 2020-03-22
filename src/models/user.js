@@ -169,6 +169,6 @@ const func = async () => {
     await sequelize.sync()
 }
 
-func()
+//func()
 
 module.exports = User
