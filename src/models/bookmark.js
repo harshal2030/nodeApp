@@ -22,11 +22,12 @@ class Bookmark extends Model {
             INNER JOIN bookmarks
             ON posts."postId" = bookmarks."postId"
             WHERE bookmarks."username"=:username
+            ORDER BY bookmarks."createdAt"
+            OFFSET :skip LIMIT :limit
         )
         SELECT users."avatarPath", cte_books.* FROM users
         INNER JOIN cte_books
-        ON cte_books."username" = users."username" ORDER BY cte_books."createdAt" DESC
-        OFFSET :skip LIMIT :limit`
+        ON cte_books."username" = users."username"`
         
 
         const result = await sequelize.query(query,
@@ -78,7 +79,6 @@ class Bookmark extends Model {
                 postId
             }
         })
-        console.log(bookmarks)
 
         if (bookmarks === 0) {
             const postDate = await Post.findOne({
