@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const User = require('./../models/user')
 const Friend = require('./../models/friend')
+const auth = require('./../middlewares/auth')
 
 router.post('/users', async (req, res) => {
     /**
@@ -61,6 +62,83 @@ router.get('/users/:username', async (req, res) => {
         res.send(userData);
     } catch (e) {
         res.status(404).send()
+    }
+})
+
+router.get('/users/:username/full', auth, async (req, res) => {
+    try {
+        const user = await User.findOne({where: {username: req.params.username}});
+        if (!user) {
+            throw new Error("No user found")
+        }
+        const userData = user.removeSensetiveUserData();
+        const followers = await Friend.count({where: {followed_username: req.params.username}});
+        const follwing = await Friend.count({where: {username: req.params.username}});
+        userData['avatarPath'] = 'http://192.168.43.26:3000/' + user['avatarPath']
+        userData['followers'] = followers
+        userData['following'] = follwing
+
+        const requester = req.user.username;
+        const isFollowing = await Friend.findOne({
+            where: {
+                username: requester,
+                followed_username: req.params.username
+            }
+        })
+
+        if (!isFollowing) {
+            userData['isFollowing'] = false;
+        } else {
+            userData['isFollowing'] = true;
+        }
+
+        res.send(userData);
+    } catch (e) {
+        res.status(404).send(e)
+    }
+})
+
+router.post('/users/follow', auth, async (req, res) => {
+    try {
+        const userExists = await User.findOne({where: {username: req.body.username}})
+        if (!userExists) {
+            throw new Error('No such user exists');
+        }
+
+        if (req.user.username === req.body.username) {
+            throw new Error('Got identical value pair.');
+        }
+
+        await Friend.create({
+            username: req.user.username,
+            followed_username: req.body.username,
+        })
+        res.status(201).send();
+    } catch (e) {
+        res.status(400).send();
+    }
+})
+
+router.delete('/users/follow', auth, async (req, res) => {
+    try {
+        const unfollowed = await Friend.destroy({
+            where: {
+                username: req.user.username,
+                followed_username: req.body.username,
+            }
+        })
+
+        if (req.user.username === req.body.username) {
+            throw new Error('Got identical value pair.')
+        }
+
+        if (!unfollowed) {
+            throw new Error('No such entry exists')
+        }
+
+        res.send()
+    } catch (e) {
+        res.send(400).send();
     }
 })
 

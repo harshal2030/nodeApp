@@ -54,6 +54,7 @@ class User extends Model {
     }
     /**
     * Returns user limited info i.e. Remove sensetive data
+    * 
     * @returns {Object} User info for transmission
     */
     removeSensetiveUserData() {
@@ -65,7 +66,9 @@ class User extends Model {
             adm_num: user.adm_num,
             dob: user.dob,
             createdAt: user.createdAt,
-            avatarPath: user.avatarPath
+            avatarPath: user.avatarPath,
+            bio: user.bio,
+            location: user.location,
         }
     }
 }
@@ -149,6 +152,12 @@ User.init({
             }
         }
     },
+    bio: {
+        type: DataTypes.STRING,
+    },
+    location:{
+        type: DataTypes.STRING,
+    },
     tokens: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         defaultValue: [],
@@ -161,12 +170,13 @@ User.init({
     hooks: {
         beforeSave: (user, options) => {
             user.password = sha512(user.password).toString()
+            user.username = user.username.toLowerCase();
         }
     }
 })
 
 const func = async () => {
-    await sequelize.sync()
+    await sequelize.sync({alter: true})
 }
 
 //func()
