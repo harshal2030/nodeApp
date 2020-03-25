@@ -6,6 +6,8 @@ const sharp = require('sharp');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
 const Bookmark = require('./../models/bookmark');
+const {Op} = require('sequelize');
+const Like = require('./../models/like');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -91,6 +93,62 @@ router.get('/posts', auth, async (req, res) => {
     }
 })
 
+//GET /posts/username/media?skip=0&limit=20
+router.get('/posts/:username/media', auth, async (req, res) => {
+    /**
+     * Route for getting list url for images for specified user
+     * 200 for success
+     * 404 for no media or non associated user
+     */
+    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? 20 : parseInt(req.query.limit);
+
+    try {
+        const media = await Post.findAll({
+            where: {
+                username: req.params.username,
+                mediaPath: {
+                    [Op.not]: null,
+                }
+            },
+            raw: true,
+            attributes: ['mediaPath', 'likes', 'comments'],
+            offset: skip,
+            limit: limit,
+        })
+
+        if (!media || media.length === 0) {
+            throw new Error('Mentioned user has no media associated.')
+        }
+
+        res.send(media)
+    } catch (e) {
+        res.status(404).send()
+    }
+})
+
+// GET /posts/username/stars?skip=0&limit=20
+router.get('/posts/:username/stars', auth, async (req, res) => {
+    /**
+     * route to get stars of user
+     */
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+    try {
+        const likes = await Like.getUserLikes(req.params.username, skip, limit);
+        if (!likes) {
+            throw new Error('Nothing found for user');
+        }
+
+        for (let i=0; i<likes.length; i++) {
+            likes[i].mediaPath = 'http://192.168.43.26:3000' + likes[i].mediaPath;
+            likes[i].avatarPath = 'http://192.168.43.26:3000/' + likes[i].avatarPath;
+        }
+        res.send(likes);
+    } catch (e) {
+        res.status(404).send();
+    }
+})
 
 // GET /posts/username?skip=0&limit=20
 router.get('/posts/:username', async (req, res) => {

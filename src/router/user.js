@@ -65,7 +65,13 @@ router.get('/users/:username', async (req, res) => {
     }
 })
 
+// GET /users/username/full
 router.get('/users/:username/full', auth, async (req, res) => {
+    /**
+     * Route to get user profile with addintional info like isFollowing.
+     * 200 for success
+     * 404 for no user
+     */
     try {
         const user = await User.findOne({where: {username: req.params.username}});
         if (!user) {
@@ -139,6 +145,45 @@ router.delete('/users/follow', auth, async (req, res) => {
         res.send()
     } catch (e) {
         res.send(400).send();
+    }
+})
+
+
+// GET /users/username/followers?skip=0&limit=30
+router.get('/users/:username/followers', auth, async (req, res) => {
+    /**
+     * Route for getting user followers
+     */
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+    try {
+        const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
+        if (!followers) {
+            throw new Error('Something went wrong');
+        }
+
+        res.send(followers);
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
+// GET /users/username/following?skip=0&limit=30
+router.get('/users/:username/following', auth, async (req, res) => {
+    /**
+     * Route for getting user following
+     */
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+    try {
+        const following = await Friend.getUserFollowing(req.params.username, skip, limit);
+        if (!following) {
+            throw new Error('Something went wrong');
+        }
+
+        res.send(following);
+    } catch (e) {
+        res.status(500).send()
     }
 })
 
