@@ -135,7 +135,7 @@ User.init({
     },
     avatarPath: {
         type: DataTypes.STRING,
-        defaultValue: 'images/avatar/default.png'
+        defaultValue: '/images/avatar/default.png'
     },
     password: {
         type: DataTypes.STRING,

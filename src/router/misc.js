@@ -39,8 +39,8 @@ router.get('/misc', auth, async (req, res) => {
         if (req.query.option === 'bookmark') {
             const bookmarks = await Bookmark.getUserBookmarks(req.user.username, skip, limit);
             for (let i=0; i<bookmarks.length; i++) {
-                bookmarks[i].mediaPath = 'http://192.168.43.26:3000'+bookmarks[i].mediaPath;
-                bookmarks[i].avatarPath = 'http://192.168.43.26:3000/'+bookmarks[i].avatarPath;
+                bookmarks[i].mediaPath = process.env.TEMPURL + bookmarks[i].mediaPath;
+                bookmarks[i].avatarPath = process.env.TEMPURL + bookmarks[i].avatarPath;
                 bookmarks[i].bookmarked = true;
             }
             res.send(bookmarks);

@@ -79,8 +79,8 @@ router.get('/posts', auth, async (req, res) => {
 
         for(let i=0; i<posts.length; i++) {
             data.push(posts[i])
-            posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
-            posts[i].avatarPath = 'http://192.168.43.26:3000/' + posts[i].avatarPath;
+            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
+            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
             if (bookmark.includes(posts[i].postId)) {
                 posts[i]['bookmarked'] = true
             } else {
@@ -141,8 +141,8 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
         }
 
         for (let i=0; i<likes.length; i++) {
-            likes[i].mediaPath = 'http://192.168.43.26:3000' + likes[i].mediaPath;
-            likes[i].avatarPath = 'http://192.168.43.26:3000/' + likes[i].avatarPath;
+            likes[i].mediaPath = process.env.TEMPURL + likes[i].mediaPath;
+            likes[i].avatarPath = process.env.TEMPURL + likes[i].avatarPath;
         }
         res.send(likes);
     } catch (e) {
@@ -167,8 +167,8 @@ router.get('/posts/:username', async (req, res) => {
             return res.status(404).send('No Posts yet')
         }
         for (let i=0; i<posts.length; i++) {
-            posts[i].mediaPath = 'http://192.168.43.26:3000' + posts[i].mediaPath;
-            posts[i].avatarPath = 'http://192.168.43.26:3000/' + posts[i].avatarPath;
+            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
+            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
         }
         res.send(posts)
     } catch (e) {

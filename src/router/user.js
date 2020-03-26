@@ -13,7 +13,7 @@ router.post('/users', async (req, res) => {
      */
     try {
         const user = await User.create(req.body);
-        user['avatarPath'] = 'http://192.168.43.26:3000/' + user['avatarPath'];
+        user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
         const userData = user.removeSensetiveUserData()
         res.status(201).send({user: userData, token})
@@ -30,7 +30,7 @@ router.post('/users/login', async (req, res) => {
      */
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password);
-        user['avatarPath'] = 'http://192.168.43.26:3000/' + user['avatarPath'];
+        user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
         const userData = user.removeSensetiveUserData()
         res.send({user: userData, token})
@@ -55,7 +55,7 @@ router.get('/users/:username', async (req, res) => {
         const userData = user.removeSensetiveUserData();
         const followers = await Friend.count({where: {followed_username: req.params.username}});
         const follwing = await Friend.count({where: {username: req.params.username}});
-        userData['avatarPath'] = 'http://192.168.43.26:3000/' + user['avatarPath']
+        userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
         userData['followers'] = followers
         userData['following'] = follwing
         res.send(userData);
@@ -79,7 +79,7 @@ router.get('/users/:username/full', auth, async (req, res) => {
         const userData = user.removeSensetiveUserData();
         const followers = await Friend.count({where: {followed_username: req.params.username}});
         const follwing = await Friend.count({where: {username: req.params.username}});
-        userData['avatarPath'] = 'http://192.168.43.26:3000/' + user['avatarPath']
+        userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
         userData['followers'] = followers
         userData['following'] = follwing
 
@@ -157,6 +157,9 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
+        for (let i=0; i<followers.length; i++) {
+            followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
+        }
         if (!followers) {
             throw new Error('Something went wrong');
         }
@@ -178,6 +181,10 @@ router.get('/users/:username/following', auth, async (req, res) => {
         const following = await Friend.getUserFollowing(req.params.username, skip, limit);
         if (!following) {
             throw new Error('Something went wrong');
+        }
+
+        for (let i=0; i<following.length; i++) {
+            following[i].avatarPath = process.env.TEMPURL + following[i].avatarPath;
         }
 
         res.send(following);
