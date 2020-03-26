@@ -19,7 +19,6 @@ router.post('/users', async (req, res) => {
         res.status(201).send({user: userData, token})
     } catch (e) {
         res.status(400).send(e)
-        console.log(e)
     }
 })
 
