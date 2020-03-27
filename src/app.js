@@ -21,7 +21,7 @@ io.on('connection', (socket) => {
                 raw: true
             });
         for (let i=0; i<users[0].length; i++) {
-            users[0][i].avatarPath = 'http://192.168.43.26:3000/' + users[0][i].avatarPath;
+            users[0][i].avatarPath = process.env.TEMPURL + users[0][i].avatarPath;
         }
         //console.log(users[0])
         socket.emit('users', users[0]);
