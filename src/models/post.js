@@ -13,11 +13,13 @@ class Post extends Model {
     * @param {String} postId uuidv4 of the post
     * @param {String} likedBy user who liked
     * @param {String} postedBy user who posted it
-    * @returns {undefined}  
+    * @returns {number} number of likes  
     */
     static async like(postId, likedBy, postedBy) {
-        Like.create({postId, likedBy, postedBy});
+        await Like.create({postId, likedBy, postedBy});
         Post.increment({likes: 1}, {where: {postId}});
+
+        return await Like.count({where: {postId}})
     }
 
     /**
@@ -28,11 +30,13 @@ class Post extends Model {
      * @param {String} commentBy author of the comment
      * @param {String} commentValue body of the comment
      * @param {String} postedBy author of the post
-     * @returns {undefined}
+     * @returns {number} number of comments
      */
     static async comment(postId, commentBy, commentValue, postedBy) {
         Comment.create({postId, commentBy, commentValue, postedBy});
         Post.increment({comments: 1}, {where: {postId}});
+
+        return await Comment.count({where: {postId}})
     }
 
     /**

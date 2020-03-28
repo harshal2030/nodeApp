@@ -73,9 +73,9 @@ router.get('/posts', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
+        const bookmark = await Bookmark.getUserBookmarksIds(req.user.username, skip, limit)
+        const likes = await Like.getUserLikeIds(req.user.username, skip, limit)
         const data = []
-        const bookmark = await Bookmark.getUserBookmarksIds(req.user.username, skip, limit);
-        
 
         for(let i=0; i<posts.length; i++) {
             data.push(posts[i])
@@ -85,6 +85,12 @@ router.get('/posts', auth, async (req, res) => {
                 posts[i]['bookmarked'] = true
             } else {
                 posts[i]['bookmarked'] = false
+            }
+
+            if (likes.includes(posts[i].postId)) {
+                posts[i]['liked'] = true;
+            } else {
+                posts[i]['liked'] = false;
             }
         }
         res.send(data);
@@ -173,6 +179,40 @@ router.get('/posts/:username', async (req, res) => {
         res.send(posts)
     } catch (e) {
         res.status(500).send(e)
+    }
+})
+
+router.patch('/posts/:postId/like', auth, async (req, res) => {
+    try {
+        const didExists = await Post.findOne({where: {postId: req.params.postId}})
+        if (!didExists) {
+            throw new Error('Invalid request');
+        }
+
+        const isPresent = await Like.findOne({where: {
+                postId: req.params.postId, 
+                likedBy: req.body.username, 
+                postedBy: req.body.postedBy
+            }
+        })
+
+        if (isPresent) {
+            throw new Error('Present')
+        }
+
+        const likes = await Post.like(req.params.postId, req.body.username, req.body.postedBy);
+        res.send({likes});
+    } catch (e) {
+        if (e.toString() === 'Error: Present') {
+            await Like.destroy({where: {
+                postId: req.params.postId, 
+                likedBy: req.body.username, 
+                postedBy: req.body.postedBy
+            }})
+            Post.increment({likes: -1}, {where: {postId: req.params.postId}})
+        }
+        const likes = await Like.count({where: {postId: req.params.postId}})
+        res.status(400).send({likes})
     }
 })
 

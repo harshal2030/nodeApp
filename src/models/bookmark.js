@@ -50,11 +50,14 @@ class Bookmark extends Model {
      * @returns {Array} array of bookmarks limited wrt to posts
      */
     static async getUserBookmarksIds(username, skip=0, limit=20) {
-        const query = 'SELECT sub1."postId" FROM ' + 
-            '(SELECT posts.* FROM posts ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit) '+
-            'as sub1 INNER JOIN bookmarks '+
-            'ON bookmarks."postId" = sub1."postId"'+
-            ' AND bookmarks."postDate"=sub1."createdAt" WHERE bookmarks."username"=:username;';
+        const query = `SELECT sub1."postId" FROM
+                        (SELECT posts.* FROM posts ORDER BY posts."createdAt" 
+                        DESC OFFSET :skip LIMIT :limit)
+                        AS sub1 INNER JOIN 
+                        (SELECT * FROM bookmarks WHERE username=:username)
+                        AS sub2
+                        ON sub2."postId" = sub1."postId"
+                        AND sub2."postDate"=sub1."createdAt"`;
 
         const results = await sequelize.query(query, {
             replacements: {username, skip, limit},

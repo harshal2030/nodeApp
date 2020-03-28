@@ -13,7 +13,6 @@ const server = http.createServer(app);
 const io = socketio(server);
 
 io.on('connection', (socket) => {
-    console.log('New websocket connection');
     socket.on('query', async (query) => {
         try {
             const users = await sequelize.query(`SELECT name, username, "avatarPath" FROM users 
@@ -29,6 +28,15 @@ io.on('connection', (socket) => {
             // Send users in similar location
         }
     })
+
+    const test = ['a36d4e38-ec68-4671-85b0-3321284655ef', '10ae2390-4d8d-49cc-a1ed-0e047c18d46a'];
+    socket.emit("likeUpdateInit");
+    socket.on('likeUpdate', (postId) => {
+        if (test.includes(postId)) {
+            socket.emit('likeUpdate', 2)
+        }
+    })
+
 })
 
 const publicDirPath = path.join(__dirname, '../public')
