@@ -34,19 +34,34 @@ class Like extends Model{
      * Get array of ids of posts liked by user
      * 
      * @param {String} username username of the user
+     * @param {String} mode bookmarks | posts Get ids accord to request type
      * @param {number} [skip] no. skips in posts
      * @param {number} [limit] limits in posts
      * 
      * @returns {Array} array of postIds liked by user
      */
-    static async getUserLikeIds(username, skip = 0, limit = 20) {
-        const query = `SELECT sub1."postId" FROM 
-                        (SELECT posts.* FROM posts ORDER BY posts."createdAt" 
-                        DESC OFFSET :skip LIMIT :limit)
-                        AS sub1 INNER JOIN 
-                        (SELECT * FROM likes WHERE "likedBy"=:username)
-                        AS sub2
-                        ON sub2."postId" = sub1."postId"`
+    static async getUserLikeIds(username, mode, skip = 0, limit = 20) {
+        let query;
+        switch (mode) {
+            case 'bookmarks':
+                query = `SELECT likes.* FROM 
+                (SELECT bookmarks."postId" FROM bookmarks WHERE 
+                username=:username OFFSET :skip LIMIT :limit) AS books
+                INNER JOIN
+                (SELECT likes."postId"
+                FROM likes WHERE "likedBy" = :username) AS likes
+                ON likes."postId" = books."postId"`;
+                break;
+            default:
+                query = `SELECT sub1."postId" FROM 
+                (SELECT posts.* FROM posts ORDER BY posts."createdAt" 
+                DESC OFFSET :skip LIMIT :limit)
+                AS sub1 INNER JOIN 
+                (SELECT * FROM likes WHERE "likedBy"=:username)
+                AS sub2
+                ON sub2."postId" = sub1."postId"`;
+                break;
+        }
 
         const result = await sequelize.query(query, {
             replacements: {username, skip, limit},

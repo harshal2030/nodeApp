@@ -193,4 +193,37 @@ router.get('/users/:username/following', auth, async (req, res) => {
     }
 })
 
+router.post('/users/logout', auth, async (req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token !== req.token
+        })
+
+        await User.update(req.user, {
+            where: {username: req.user.username}
+        });
+
+        res.send()
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e)
+    }
+})
+
+router.post('/users/logouAll', auth, async (req, res) => {
+    try {
+        req.user.token = []
+
+        await User.update(req.user, {
+            where: {
+                username: req.user.username
+            }
+        })
+
+        res.send()
+    } catch (e) {
+        res.status(500).send()
+    }
+})
+
 module.exports = router;

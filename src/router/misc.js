@@ -2,6 +2,7 @@ const express = require('express');
 const Bookmark = require('./../models/bookmark');
 const auth = require('./../middlewares/auth');
 const router = express.Router();
+const Like = require('./../models/like');
 
 // POST /misc?option=bookmark
 router.post('/misc', auth, async (req, res) => {
@@ -38,10 +39,16 @@ router.get('/misc', auth, async (req, res) => {
     try {
         if (req.query.option === 'bookmark') {
             const bookmarks = await Bookmark.getUserBookmarks(req.user.username, skip, limit);
+            const likes = await Like.getUserLikeIds(req.user.username, 'bookmarks', skip, limit);
             for (let i=0; i<bookmarks.length; i++) {
                 bookmarks[i].mediaPath = process.env.TEMPURL + bookmarks[i].mediaPath;
                 bookmarks[i].avatarPath = process.env.TEMPURL + bookmarks[i].avatarPath;
                 bookmarks[i].bookmarked = true;
+                if (likes.includes(bookmarks[i].postId)) {
+                    bookmarks[i]['liked'] = true
+                } else {
+                    bookmarks[i]['liked'] = false
+                }
             }
             res.send(bookmarks);
         }

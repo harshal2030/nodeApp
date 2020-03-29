@@ -74,7 +74,7 @@ router.get('/posts', auth, async (req, res) => {
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
         const bookmark = await Bookmark.getUserBookmarksIds(req.user.username, skip, limit)
-        const likes = await Like.getUserLikeIds(req.user.username, skip, limit)
+        const likes = await Like.getUserLikeIds(req.user.username, 'posts', skip, limit)
         const data = []
 
         for(let i=0; i<posts.length; i++) {
@@ -93,8 +93,10 @@ router.get('/posts', auth, async (req, res) => {
                 posts[i]['liked'] = false;
             }
         }
+
         res.send(data);
     } catch (e) {
+        console.log(e)
         res.status(400).send(e)
     }
 })
