@@ -70,6 +70,34 @@ class Like extends Model{
 
         return result[0].map(i => i.postId);
     }
+
+    /**
+     * Get ids of likes based on posts of single user
+     * 
+     * @param {String} username username whose posts are to be fetched 
+     * @param {String} requester username of requester
+     * @param {number} [skip] skips when end has reached
+     * @param {number} [limit] ids to be returned on each call
+     * 
+     * @returns {Array} array of ids of like
+     */
+    static async getUserLikeId(username, requester, skip = 0, limit = 20) {
+        const query = `SELECT sub1."postId" FROM 
+            (SELECT posts.* FROM posts WHERE username=:username
+            ORDER BY posts."createdAt" 
+            DESC OFFSET :skip LIMIT :limit)
+            AS sub1 INNER JOIN 
+            (SELECT * FROM likes WHERE "likedBy"=:requester)
+            AS sub2
+            ON sub2."postId" = sub1."postId"`;
+
+        const result = await sequelize.query(query, {
+            replacements: {username, requester, skip, limit},
+            raw: true,
+        })
+
+        return result[0].map(i => i.postId);
+    }
 }
 
 Like.init({

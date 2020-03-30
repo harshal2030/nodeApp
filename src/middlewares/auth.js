@@ -5,12 +5,12 @@ const User = require("./../models/user");
 const { Op } = require("sequelize");
 
 const publicKeyPath = path.join(__dirname, "../keys/public.key");
-const pulbicKey = fs.readFileSync(publicKeyPath, "utf-8");
+const publicKey = fs.readFileSync(publicKeyPath, "utf-8");
 
 const auth = async (req, res, next) => {
   try {
     const token = req.header("Authorization").replace("Bearer ", "");
-    const decoded = jwt.verify(token, pulbicKey, { algorithms: "RS256" });
+    const decoded = jwt.verify(token, publicKey, { algorithms: "RS256" });
 
     const user = await User.findOne({
       where: {
@@ -29,8 +29,48 @@ const auth = async (req, res, next) => {
     req.user = user.toJSON()
     next();
   } catch (e) {
-      res.status(401).send({'error': 'Please authenticate'})
+    res.status(401).send({'error': 'Please authenticate'})
   }
 };
 
-module.exports = auth;
+const optionalAuth = async (req, res, next) => {
+  try {
+    const isToken = req.header('Authorization')
+    
+    if (isToken === undefined) {
+      throw 'no token'
+    }
+
+    const token = req.header("Authorization").replace("Bearer ", "");
+    const decoded = jwt.verify(token, publicKey, { algorithms: "RS256" });
+    console.log(decoded.username)
+    console.log(token)
+
+    const user = await User.findOne({
+      where: {
+        username: decoded.username,
+        tokens: {
+          [Op.contains]: [token]
+        }
+      }
+    });
+
+    if (!user) {
+      throw 'no such user'
+    }
+
+    req.token = token;
+    req.user = user.toJSON();
+    next()
+  } catch (e) {
+    console.log(e)
+    if (e === 'no such user') {
+      res.send(401).send()
+    } else if (e === 'no token') {
+      req.user = undefined;
+      next()
+    }
+  }
+}
+
+module.exports = {auth, optionalAuth};

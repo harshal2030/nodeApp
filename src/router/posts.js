@@ -1,5 +1,5 @@
 const express = require('express');
-const auth = require('./../middlewares/auth');
+const {auth, optionalAuth} = require('./../middlewares/auth');
 const Post = require('./../models/post');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -159,17 +159,21 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
 })
 
 // GET /posts/username?skip=0&limit=20
-router.get('/posts/:username', async (req, res) => {
+router.get('/posts/:username', optionalAuth, async (req, res) => {
     /**
      * Route for posts of a user (req.params.username)
      * 404 if no posts
      * 200 with atleast one post
      */
+    let likes;
     const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
     try {
         const username = req.params.username;
         const posts = await Post.getUserPosts(username, skip, limit);
+        if (req.user !== undefined) {
+            likes = await Like.getUserLikeId(req.params.username, req.user.username, skip, limit);
+        }
 
         if (!posts) {
             return res.status(404).send('No Posts yet')
@@ -177,9 +181,19 @@ router.get('/posts/:username', async (req, res) => {
         for (let i=0; i<posts.length; i++) {
             posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
             posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
+
+            if (req.user !== undefined) {
+                if (likes.includes(posts[i].postId)) {
+                    posts[i]['liked'] = true
+                } else {
+                    posts[i]['liked'] = false
+                }
+            }
         }
+
         res.send(posts)
     } catch (e) {
+        console.log(e)
         res.status(500).send(e)
     }
 })

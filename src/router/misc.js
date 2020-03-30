@@ -1,6 +1,6 @@
 const express = require('express');
 const Bookmark = require('./../models/bookmark');
-const auth = require('./../middlewares/auth');
+const {auth} = require('./../middlewares/auth');
 const router = express.Router();
 const Like = require('./../models/like');
 

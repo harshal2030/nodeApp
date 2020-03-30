@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const User = require('./../models/user')
 const Friend = require('./../models/friend')
-const auth = require('./../middlewares/auth')
+const {auth} = require('./../middlewares/auth')
 
 router.post('/users', async (req, res) => {
     /**

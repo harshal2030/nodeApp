@@ -6,6 +6,8 @@ const miscRouter = require('./router/misc')
 const http = require('http')
 const socketio = require('socket.io');
 const sequelize = require('./db');
+const Like = require('./models/like');
+const Post = require('./models/post');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,14 +31,41 @@ io.on('connection', (socket) => {
         }
     })
 
-    const test = ['a36d4e38-ec68-4671-85b0-3321284655ef', '10ae2390-4d8d-49cc-a1ed-0e047c18d46a'];
-    socket.emit("likeUpdateInit");
-    socket.on('likeUpdate', (postId) => {
-        if (test.includes(postId)) {
-            socket.emit('likeUpdate', 2)
+    socket.on('hitLike', async (data) => {
+        try {
+            const didPostExists = await Post.findOne({
+                where: {postId: data.postId}
+            })
+
+            if (!didPostExists) {
+                throw 'no such post'
+            }
+
+            const isPresent = await Like.findOne({where:{
+                postId: data.postId,
+                likedBy: data.username,
+                postedBy: data.postedBy
+            }})
+
+            if (isPresent) {
+                throw 'Present'
+            }
+
+            const likes = await Post.like(data.postId, data.username, data.postedBy);
+            io.emit('likeUpdate', {postId: data.postId, update: likes});
+        } catch (e) {
+            if (e === 'Present') {
+                await Like.destroy({where: {
+                    postId: data.postId,
+                    likedBy: data.username,
+                    postedBy: data.postedBy,
+                }})
+                Post.increment({likes: -1}, {where: {postId: data.postId}})
+            }
+            const likes = await Like.count({where: {postId: data.postId}})
+            io.emit('likeUpdate', {postId: data.postId, update: likes})
         }
     })
-
 })
 
 const publicDirPath = path.join(__dirname, '../public')
