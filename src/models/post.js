@@ -50,8 +50,10 @@ class Post extends Model {
     static async getUserFeed(username, skip = 0, limit = 20) {
         const query = `WITH cte_posts AS (
             SELECT posts.* FROM posts
-            INNER JOIN friends ON
-            friends."followed_username" = posts."username"
+            INNER JOIN 
+			(SELECT * FROM friends WHERE friends."username"=:username) AS
+			followings ON
+            followings."followed_username" = posts."username"
             UNION
             SELECT posts.* FROM posts WHERE
             posts."username"=:username

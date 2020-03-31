@@ -43,8 +43,6 @@ const optionalAuth = async (req, res, next) => {
 
     const token = req.header("Authorization").replace("Bearer ", "");
     const decoded = jwt.verify(token, publicKey, { algorithms: "RS256" });
-    console.log(decoded.username)
-    console.log(token)
 
     const user = await User.findOne({
       where: {
@@ -63,7 +61,6 @@ const optionalAuth = async (req, res, next) => {
     req.user = user.toJSON();
     next()
   } catch (e) {
-    console.log(e)
     if (e === 'no such user') {
       res.send(401).send()
     } else if (e === 'no token') {
