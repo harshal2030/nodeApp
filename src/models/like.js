@@ -45,21 +45,30 @@ class Like extends Model{
         switch (mode) {
             case 'bookmarks':
                 query = `SELECT likes.* FROM 
-                (SELECT bookmarks."postId" FROM bookmarks WHERE 
-                username=:username OFFSET :skip LIMIT :limit) AS books
-                INNER JOIN
-                (SELECT likes."postId"
-                FROM likes WHERE "likedBy" = :username) AS likes
-                ON likes."postId" = books."postId"`;
+                    (SELECT bookmarks."postId" FROM bookmarks WHERE 
+                    username=:username OFFSET :skip LIMIT :limit) AS books
+                    INNER JOIN
+                    (SELECT likes."postId"
+                    FROM likes WHERE "likedBy" = :username) AS likes
+                    ON likes."postId" = books."postId"`;
                 break;
             default:
-                query = `SELECT sub1."postId" FROM 
-                (SELECT posts.* FROM posts ORDER BY posts."createdAt" 
-                DESC OFFSET :skip LIMIT :limit)
-                AS sub1 INNER JOIN 
-                (SELECT * FROM likes WHERE "likedBy"=:username)
-                AS sub2
-                ON sub2."postId" = sub1."postId"`;
+                query = `WITH cte_posts AS (
+                    SELECT posts.* FROM posts
+                    INNER JOIN 
+                    (SELECT * FROM friends WHERE 
+                    friends."username"=:username) AS
+                    followings ON
+                    followings."followed_username" = posts."username"
+                    UNION
+                    SELECT posts.* FROM posts WHERE
+                    posts."username"=:username
+                    ORDER BY "createdAt" DESC OFFSET :skip LIMIT :limit
+                )
+                SELECT * FROM (SELECT likes."postId" FROM likes
+                        WHERE "likedBy"=:username) 
+                        AS sub1 INNER JOIN cte_posts
+                        ON sub1."postId" = cte_posts."postId"`;
                 break;
         }
 
@@ -67,6 +76,7 @@ class Like extends Model{
             replacements: {username, skip, limit},
             raw: true,
         })
+        console.log(result)
 
         return result[0].map(i => i.postId);
     }

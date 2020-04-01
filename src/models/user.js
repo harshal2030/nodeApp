@@ -57,8 +57,10 @@ class User extends Model {
     * 
     * @returns {Object} User info for transmission
     */
-    removeSensetiveUserData() {
+    async removeSensetiveUserData() {
         const user = this.toJSON();
+        const followers = await Friend.count({where: {followed_username: user.username}});
+        const following = await Friend.count({where: {username: user.username}});
 
         return {
             name: user.name,
@@ -69,6 +71,8 @@ class User extends Model {
             avatarPath: user.avatarPath,
             bio: user.bio,
             location: user.location,
+            followers,
+            following
         }
     }
 }

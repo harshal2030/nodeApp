@@ -31,6 +31,14 @@ Comment.init({
             min: 1
         }
     },
+    mediaIncluded: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    mediaPath: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     postedBy: {
         type: DataTypes.STRING,
         allowNull: false,

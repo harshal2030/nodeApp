@@ -15,7 +15,7 @@ router.post('/users', async (req, res) => {
         const user = await User.create(req.body);
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
-        const userData = user.removeSensetiveUserData()
+        const userData = await user.removeSensetiveUserData()
         res.status(201).send({user: userData, token})
     } catch (e) {
         res.status(400).send(e)
@@ -32,7 +32,8 @@ router.post('/users/login', async (req, res) => {
         const user = await User.findByCredentials(req.body.email, req.body.password);
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
-        const userData = user.removeSensetiveUserData()
+        const userData = await user.removeSensetiveUserData()
+        console.log(userData);
         res.send({user: userData, token})
     } catch (e) {
         res.status(404).send(e)
@@ -52,12 +53,8 @@ router.get('/users/:username', async (req, res) => {
         if (!user) {
             throw new Error("No user found")
         }
-        const userData = user.removeSensetiveUserData();
-        const followers = await Friend.count({where: {followed_username: req.params.username}});
-        const follwing = await Friend.count({where: {username: req.params.username}});
+        const userData = await user.removeSensetiveUserData();
         userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
-        userData['followers'] = followers
-        userData['following'] = follwing
         res.send(userData);
     } catch (e) {
         res.status(404).send()
@@ -76,12 +73,8 @@ router.get('/users/:username/full', auth, async (req, res) => {
         if (!user) {
             throw new Error("No user found")
         }
-        const userData = user.removeSensetiveUserData();
-        const followers = await Friend.count({where: {followed_username: req.params.username}});
-        const follwing = await Friend.count({where: {username: req.params.username}});
+        const userData = await user.removeSensetiveUserData();
         userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
-        userData['followers'] = followers
-        userData['following'] = follwing
 
         const requester = req.user.username;
         const isFollowing = await Friend.findOne({

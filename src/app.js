@@ -82,7 +82,7 @@ app.get('/date', (req, res) => {
     const mm = today.getMonth() + 1;
     const yyyy = today.getFullYear();
 
-    const date = dd+'-'+mm+'-'+yyyy
+    const date = yyyy+'-'+mm+'-'+dd
     res.send({date})
 })
 
