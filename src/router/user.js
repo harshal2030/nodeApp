@@ -33,7 +33,6 @@ router.post('/users/login', async (req, res) => {
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
         const userData = await user.removeSensetiveUserData()
-        console.log(userData);
         res.send({user: userData, token})
     } catch (e) {
         res.status(404).send(e)

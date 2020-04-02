@@ -75,7 +75,7 @@ class Post extends Model {
      * Get posts of a user 
      * 
      * @param {String} username username of user
-     * @param {number} [skip]skips after end is reached
+     * @param {number} [skip] skips after end is reached
      * @param {number} [limit] no. of posts to returned on each call
      * 
      * @returns {Array} array of posts of auser 

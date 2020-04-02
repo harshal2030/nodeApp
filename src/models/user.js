@@ -163,7 +163,7 @@ User.init({
         type: DataTypes.STRING,
     },
     tokens: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
+        type: DataTypes.ARRAY(DataTypes.STRING(2048)),
         defaultValue: [],
     }
 }, {

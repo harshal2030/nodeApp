@@ -76,7 +76,6 @@ class Like extends Model{
             replacements: {username, skip, limit},
             raw: true,
         })
-        console.log(result)
 
         return result[0].map(i => i.postId);
     }
