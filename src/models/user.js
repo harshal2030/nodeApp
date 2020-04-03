@@ -88,7 +88,7 @@ User.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            len: [4, 50]
+            len: [1, 50]
         }
     },
     username: {
@@ -99,10 +99,10 @@ User.init({
             msg: 'Username already exists, try a different one.'
         },
         validate: {
-            len: [4, 25],
-            not: {
-                args: /\s/,
-                msg: 'Invalid username pattern'
+            len: [1, 26],
+            is: {
+                args: "^[a-zA-Z0-9]+$",
+                msg: 'Invalid username'
             }
         }
     },
@@ -173,6 +173,7 @@ User.init({
     freezeTableName: true,
     hooks: {
         beforeSave: (user, options) => {
+            user.name = validator.escape(user.name)
             user.password = sha512(user.password).toString()
             user.username = user.username.toLowerCase();
         }
@@ -183,6 +184,6 @@ const func = async () => {
     await sequelize.sync({alter: true})
 }
 
-//func()
+func()
 
 module.exports = User

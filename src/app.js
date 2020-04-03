@@ -8,6 +8,7 @@ const socketio = require('socket.io');
 const sequelize = require('./db');
 const Like = require('./models/like');
 const Post = require('./models/post');
+const User = require('./models/user');
 
 const app = express();
 const server = http.createServer(app);
@@ -66,6 +67,34 @@ io.on('connection', (socket) => {
             io.emit('likeUpdate', {postId: data.postId, update: likes})
         }
     })
+
+    socket.on('usernameValidation', async (username) => {
+        const userCount = await User.count({
+            where: {
+                username: username.toLowerCase()
+            }
+        })
+
+        if (userCount !== 0) {
+            return socket.emit('usernameValidation', true)
+        }
+
+        return socket.emit('usernameValidation', false)
+    })
+
+    socket.on('emailValidation', async (email) => {
+        const userCount = await User.count({
+            where: {
+                email
+            }
+        })
+
+        if (userCount !== 0) {
+            return socket.emit('emailValidation', true)
+        }
+
+        return socket.emit('emailValidation', false);
+    })
 })
 
 const publicDirPath = path.join(__dirname, '../public')
@@ -82,7 +111,7 @@ app.get('/date', (req, res) => {
     const mm = today.getMonth() + 1;
     const yyyy = today.getFullYear();
 
-    const date = yyyy+'-'+mm+'-'+dd
+    const date = dd+'-'+mm+'-'+yyyy
     res.send({date})
 })
 

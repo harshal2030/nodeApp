@@ -2,6 +2,8 @@ const {Model, DataTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
 const Comment = require('./comment')
+const validator = require('validator')
+
 /**
  * Initiates the Post model for the app
  * @class Post 
@@ -157,7 +159,13 @@ Post.init({
     sequelize,
     timestamps: true,
     modelName: 'posts',
-    freezeTableName: true
+    freezeTableName: true,
+    hooks: {
+        beforeSave: (post, options) => {
+            post.title = validator.escape(post.title);
+            post.description = validator.escape(post.description);
+        }
+    }
 })
 
 const func = async () => {
