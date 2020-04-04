@@ -1,5 +1,6 @@
 const {DataTypes, Model} = require('sequelize');
 const sequelize = require('../db');
+const validator = require('validator');
 
 class Like extends Model{
 
@@ -15,8 +16,8 @@ class Like extends Model{
     static async getUserLikes(username, skip = 0, limit = 20) {
         const query = `WITH cte_likes AS (
             SELECT posts.* FROM (SELECT "postId" FROM likes WHERE
-                        likes."likedBy" = :username
-                        ORDER BY likes."createdAt" OFFSET :skip LIMIT :limit)
+            likes."likedBy" = :username
+            ORDER BY likes."createdAt" OFFSET :skip LIMIT :limit)
             AS user_likes INNER JOIN posts ON posts."postId" = user_likes."postId"
         )
         SELECT users."avatarPath", cte_likes.* FROM users INNER JOIN cte_likes ON
@@ -27,7 +28,12 @@ class Like extends Model{
             raw: true,
         })
 
-        return result[0];
+        return result[0].map(post => {
+            post.title = validator.unescape(post.title);
+            post.description = validator.unescape(post.description);
+
+            return post;
+        });
     }
 
     /**
@@ -119,9 +125,9 @@ Like.init({
         allowNull: false,
         validate: {
             len: [4, 25],
-            not: {
-                args: /\s/,
-                msg: 'Invalid username pattern'
+            is: {
+                args: "^[a-zA-Z0-9]+$",
+                msg: 'Invalid username'
             }
         }
     },
@@ -130,9 +136,9 @@ Like.init({
         allowNull: false,
         validate: {
             len: [4, 25],
-            not: {
-                args: /\s/,
-                msg: 'Invalid username pattern'
+            is: {
+                args: "^[a-zA-Z0-9]+$",
+                msg: 'Invalid username'
             }
         }
     }

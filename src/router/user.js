@@ -187,6 +187,7 @@ router.get('/users/:username/following', auth, async (req, res) => {
 
 router.post('/users/logout', auth, async (req, res) => {
     try {
+        console.log(`logout ${req.user.username}`)
         req.user.tokens = req.user.tokens.filter((token) => {
             return token !== req.token
         })

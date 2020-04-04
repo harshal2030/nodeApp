@@ -1,4 +1,4 @@
-const {Model, DataTypes} = require('sequelize');
+const {Model, DataTypes, QueryTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
 const Comment = require('./comment')
@@ -67,10 +67,15 @@ class Post extends Model {
 
         const result = await sequelize.query(query, {
             replacements: {username, skip, limit},
-            raw: true,
+            raw: QueryTypes.SELECT
         })
 
-        return result[0];
+        return result[0].map(post => {
+            post.title = validator.unescape(post.title);
+            post.description = validator.unescape(post.description);
+
+            return post;
+        });
     }
 
     /**
@@ -95,7 +100,12 @@ class Post extends Model {
             raw: true,
         })
 
-        return result[0];
+        return result[0].map(post => {
+            post.title = validator.unescape(post.title);
+            post.description = validator.unescape(post.description);
+
+            return post;
+        });
     }
 }
 

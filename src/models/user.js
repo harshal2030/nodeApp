@@ -176,6 +176,10 @@ User.init({
             user.name = validator.escape(user.name)
             user.password = sha512(user.password).toString()
             user.username = user.username.toLowerCase();
+        },
+        afterFind: (user, option) => {
+            user.name = validator.unescape(user.name);
+            return user;
         }
     }
 })
@@ -184,6 +188,6 @@ const func = async () => {
     await sequelize.sync({alter: true})
 }
 
-func()
+//func()
 
 module.exports = User

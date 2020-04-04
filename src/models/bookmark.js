@@ -1,10 +1,8 @@
 const {Model, DataTypes} = require('sequelize');
-const sequelize = require('../db')
+const sequelize = require('../db');
 const Post = require('./post');
+const validator = require('validator');
 
-/**Object for bookmarked posts 
- * @class Bookmark
-*/
 class Bookmark extends Model {
     /**
      * returns the bookmarks of a specified user.
@@ -37,7 +35,12 @@ class Bookmark extends Model {
                 }
             )
 
-            return result[0]
+            return result[0].map(post => {
+                post.title = validator.unescape(post.title);
+                post.description = validator.unescape(post.description);
+
+                return post;
+            })
     }
 
     /**
