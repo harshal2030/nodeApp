@@ -1,8 +1,9 @@
 const express = require('express');
 const userRouter = require('./router/user')
 const postRouter = require('./router/posts')
-const path = require('path')
 const miscRouter = require('./router/misc')
+const settingRouter = require('./router/settings')
+const path = require('path')
 const http = require('http')
 const socketio = require('socket.io');
 const sequelize = require('./db');
@@ -103,6 +104,7 @@ app.use(express.json())
 app.use(userRouter)
 app.use(postRouter)
 app.use(miscRouter)
+app.use(settingRouter)
 app.use(express.static(publicDirPath))
 
 app.get('/date', (req, res) => {

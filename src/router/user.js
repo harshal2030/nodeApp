@@ -53,9 +53,11 @@ router.get('/users/:username', async (req, res) => {
             throw new Error("No user found")
         }
         const userData = await user.removeSensetiveUserData();
-        userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
+        userData['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
+        userData['headerPhoto'] = process.env.TEMPURL + user['headerPhoto'];
         res.send(userData);
     } catch (e) {
+        console.log(e)
         res.status(404).send()
     }
 })

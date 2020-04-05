@@ -93,6 +93,7 @@ router.get('/posts', auth, async (req, res) => {
                 posts[i]['liked'] = false;
             }
         }
+        console.log(data);
 
         res.send(data);
     } catch (e) {

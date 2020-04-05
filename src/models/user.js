@@ -71,6 +71,7 @@ class User extends Model {
             avatarPath: user.avatarPath,
             bio: user.bio,
             location: user.location,
+            headerPhoto: user.headerPhoto,
             followers,
             following
         }
@@ -88,7 +89,7 @@ User.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            len: [1, 50]
+            len: [1, 101]
         }
     },
     username: {
@@ -141,6 +142,10 @@ User.init({
         type: DataTypes.STRING,
         defaultValue: '/images/avatar/default.png'
     },
+    headerPhoto: {
+        type: DataTypes.STRING,
+        defaultValue: null,
+    },
     password: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -162,6 +167,12 @@ User.init({
     location:{
         type: DataTypes.STRING,
     },
+    website: {
+        type: DataTypes.STRING,
+        validate: {
+            isUrl: true,
+        }
+    },
     tokens: {
         type: DataTypes.ARRAY(DataTypes.STRING(2048)),
         defaultValue: [],
@@ -176,10 +187,6 @@ User.init({
             user.name = validator.escape(user.name)
             user.password = sha512(user.password).toString()
             user.username = user.username.toLowerCase();
-        },
-        afterFind: (user, option) => {
-            user.name = validator.unescape(user.name);
-            return user;
         }
     }
 })
@@ -188,6 +195,6 @@ const func = async () => {
     await sequelize.sync({alter: true})
 }
 
-//func()
+func()
 
 module.exports = User
