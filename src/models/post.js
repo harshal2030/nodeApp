@@ -60,7 +60,7 @@ class Post extends Model {
             SELECT posts.* FROM posts WHERE
             posts."username"=:username
         )
-        SELECT users."avatarPath", cte_posts.* FROM users
+        SELECT users."avatarPath", users."name", cte_posts.* FROM users
         INNER JOIN cte_posts ON
         cte_posts."username" = users."username"
         ORDER BY cte_posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
@@ -88,7 +88,7 @@ class Post extends Model {
      * @returns {Array} array of posts of auser 
      */
     static async getUserPosts(username, skip=0, limit=10) {
-        const query = `SELECT users."avatarPath", foo.* FROM 
+        const query = `SELECT users."avatarPath", users."name", foo.* FROM 
             (SELECT * FROM posts WHERE posts."username"=:username)
             AS foo
             INNER JOIN users ON
@@ -125,13 +125,6 @@ Post.init({
                 args: /\s/,
                 msg: 'Invalid username pattern'
             }
-        }
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            len: [4, 50]
         }
     },
     postedFor: {

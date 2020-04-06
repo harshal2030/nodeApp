@@ -3,8 +3,8 @@ const {auth} = require('./../middlewares/auth')
 const User = require('./../models/user')
 const multer = require('multer');
 const path = require('path');
-const uuidv4 = require('uuid/v4')
 const sharp = require('sharp')
+const fs = require('fs')
 
 const router = express.Router();
 
@@ -39,20 +39,32 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
     if (!isValidOperation) {
         return res.status(400).send({ error: "Bad request parameters" })
     }
+
     try {
+
         const user = req.user;
         updates.forEach(update => user[update] = userUpdate[update]);
 
         const files = req.files;
         if (files.avatar !== undefined) {
-            const fileName = `${uuidv4()}.png`
+
+            if (await fs.existsSync(`${avatarPath}/${req.user.username}.png`)) {
+                await fs.unlinkSync(`${avatarPath}/${req.user.username}.png`);
+            }
+
+            const fileName = `${req.user.username}.png`
             const filePath=`${avatarPath}/${fileName}`;
             await sharp(files.avatar[0].buffer).png().toFile(filePath);
             user.avatarPath = `/images/avatar/${fileName}`;
         }
 
         if (files.header !== undefined) {
-            const fileName = `${uuidv4()}.png`
+
+            if (await fs.existsSync(`${headerPath}/${req.user.username}.png`)) {
+                await fs.unlinkSync(`${headerPath}/${req.user.username}.png`);
+            }
+
+            const fileName = `${req.user.username}.png`
             const filePath=`${headerPath}/${fileName}`;
             await sharp(files.header[0].buffer).png().toFile(filePath);
             user.headerPhoto = `/images/header/${fileName}`;

@@ -76,6 +76,7 @@ router.get('/users/:username/full', auth, async (req, res) => {
         }
         const userData = await user.removeSensetiveUserData();
         userData['avatarPath'] = process.env.TEMPURL + user['avatarPath']
+        userData['headerPhoto'] = process.env.TEMPURL + user['headerPhoto'];
 
         const requester = req.user.username;
         const isFollowing = await Friend.findOne({
