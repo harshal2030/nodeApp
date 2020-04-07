@@ -8,6 +8,7 @@ const uuidv4 = require('uuid/v4');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
+const Comment = require('./../models/comment');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -195,6 +196,45 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
     } catch (e) {
         console.log(e)
         res.status(500).send(e)
+    }
+})
+
+router.post('/posts/:postId/comment', auth, async (req, res) => {
+    try {
+        const post = await Post.findOne({where: {postId: req.params.postId}});
+        if (!post) {
+            throw new Error('Invalid request')
+        }
+
+        const comment = await Comment.create({
+            postId: post.postId,
+            commentBy: req.user.username,
+            commentValue: req.body.commentValue,
+            postedBy: post.username,
+        })
+
+        res.status(201).send(comment);
+    } catch (e) {
+        res.status(400).send();
+    }
+})
+
+router.get('/posts/:postId/comment', auth, async (req, res) => {
+
+    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
+    try {
+        const comments = await Comment.findAll({
+            where: {
+                postId: req.params.postId
+            },
+            offset: skip,
+            limit,
+        })
+
+        res.send(comments);
+    } catch (e) {
+        res.status(500).send();
     }
 })
 

@@ -120,10 +120,10 @@ Post.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            len: [4, 25],
-            not: {
-                args: /\s/,
-                msg: 'Invalid username pattern'
+            len: [1, 26],
+            is: {
+                args: "^[a-zA-Z0-9]+$",
+                msg: 'Invalid username'
             }
         }
     },
