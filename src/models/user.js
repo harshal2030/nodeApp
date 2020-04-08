@@ -72,6 +72,7 @@ class User extends Model {
             bio: user.bio,
             location: user.location,
             headerPhoto: user.headerPhoto,
+            website: user.website,
             followers,
             following
         }
@@ -169,9 +170,6 @@ User.init({
     },
     website: {
         type: DataTypes.STRING,
-        validate: {
-            isUrl: true,
-        }
     },
     tokens: {
         type: DataTypes.ARRAY(DataTypes.STRING(2048)),

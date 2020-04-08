@@ -28,17 +28,14 @@ class Post extends Model {
      * Updates the comment table
      * Increment the comments in post table
      * 
-     * @param {String} postId uuidv4 of the post
-     * @param {String} commentBy author of the comment
-     * @param {String} commentValue body of the comment
-     * @param {String} postedBy author of the post
+     * @param {Object} commentBody body of the comment
      * @returns {number} number of comments
      */
-    static async comment(postId, commentBy, commentValue, postedBy) {
-        Comment.create({postId, commentBy, commentValue, postedBy});
-        Post.increment({comments: 1}, {where: {postId}});
+    static async comment(commentBody) {
+        await Comment.create(commentBody);
+        Post.increment({comments: 1}, {where: {postId: commentBody.postId}});
 
-        return await Comment.count({where: {postId}})
+        return await Comment.count({where: {postId: commentBody.postId}})
     }
 
     /**

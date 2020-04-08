@@ -12,6 +12,7 @@ const Comment = require('./../models/comment');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
+const commentImgPath = path.join(__dirname, '../../public/images/comments')
 
 const upload = multer({
     limits: {
@@ -28,7 +29,8 @@ const upload = multer({
 
 const mediaMiddleware = upload.fields([
     {name: 'image', maxCount: 1},
-    {name: 'video'}
+    {name: 'video'},
+    {name: 'commentMedia', maxCount: 1},
 ])
 
 router.post('/posts', auth, mediaMiddleware, async (req, res) => {
@@ -199,22 +201,39 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
     }
 })
 
-router.post('/posts/:postId/comment', auth, async (req, res) => {
+router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) => {
     try {
         const post = await Post.findOne({where: {postId: req.params.postId}});
         if (!post) {
             throw new Error('Invalid request')
         }
 
-        const comment = await Comment.create({
+        const raw = JSON.parse(req.body.info);
+
+        const commentBody = {
             postId: post.postId,
             commentBy: req.user.username,
-            commentValue: req.body.commentValue,
+            commentValue: raw.commentValue,
             postedBy: post.username,
-        })
+            mediaPath: undefined,
+            mediaIncluded: false,
+        }
 
-        res.status(201).send(comment);
+        const file = req.files;
+        if (file.commentMedia !== undefined) {
+            console.log('if of imAGE')
+            const filename = `${uuidv4()}.png`;
+            const filePath = commentImgPath + '/' + filename;
+            await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+            commentBody['mediaPath'] = '/images/comments/' + filename;
+            commentBody['mediaIncluded'] = true;    
+        }
+
+        const comment = await Post.comment(commentBody);
+
+        res.status(201).send({comment});
     } catch (e) {
+        console.log(e);
         res.status(400).send();
     }
 })

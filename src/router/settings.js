@@ -5,11 +5,14 @@ const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp')
 const fs = require('fs')
+const {v4} = require('uuid')
 
 const router = express.Router();
 
 const avatarPath = path.join(__dirname, '../../public/images/avatar');
 const headerPath = path.join(__dirname, '../../public/images/header');
+
+const publicPath = path.join(__dirname, '../../public');
 
 const upload = multer({
     limits: {
@@ -48,11 +51,12 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
         const files = req.files;
         if (files.avatar !== undefined) {
 
-            if (await fs.existsSync(`${avatarPath}/${req.user.username}.png`)) {
-                await fs.unlinkSync(`${avatarPath}/${req.user.username}.png`);
+            if (fs.existsSync(`${publicPath}/${req.user.avatarPath}`) 
+                && req.user.avatarPath !== '/images/avatar/default.png') {
+                fs.unlinkSync(`${publicPath}/${req.user.avatarPath}`);
             }
 
-            const fileName = `${req.user.username}.png`
+            const fileName = `${v4()}.png`
             const filePath=`${avatarPath}/${fileName}`;
             await sharp(files.avatar[0].buffer).png().toFile(filePath);
             user.avatarPath = `/images/avatar/${fileName}`;
@@ -60,11 +64,11 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
 
         if (files.header !== undefined) {
 
-            if (await fs.existsSync(`${headerPath}/${req.user.username}.png`)) {
-                await fs.unlinkSync(`${headerPath}/${req.user.username}.png`);
+            if (fs.existsSync(`${publicPath}/${req.user.headerPhoto}`)) {
+                fs.unlinkSync(`${publicPath}/${req.user.headerPhoto}`);
             }
 
-            const fileName = `${req.user.username}.png`
+            const fileName = `${v4()}.png`
             const filePath=`${headerPath}/${fileName}`;
             await sharp(files.header[0].buffer).png().toFile(filePath);
             user.headerPhoto = `/images/header/${fileName}`;

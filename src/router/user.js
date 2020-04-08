@@ -14,7 +14,7 @@ router.post('/users', async (req, res) => {
     try {
         const user = await User.create(req.body);
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
-        const token = await user.generateAuthToken();
+        const token = user.generateAuthToken();
         const userData = await user.removeSensetiveUserData()
         res.status(201).send({user: userData, token})
     } catch (e) {
@@ -33,6 +33,7 @@ router.post('/users/login', async (req, res) => {
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
         const token = await user.generateAuthToken();
         const userData = await user.removeSensetiveUserData()
+        userData['headerPhoto'] = process.env.TEMPURL + userData['headerPhoto'];
         res.send({user: userData, token})
     } catch (e) {
         res.status(404).send(e)
@@ -151,7 +152,7 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
+        const followers = Friend.getUserFollowers(req.params.username, skip, limit);
         for (let i=0; i<followers.length; i++) {
             followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
         }
@@ -173,7 +174,7 @@ router.get('/users/:username/following', auth, async (req, res) => {
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        const following = await Friend.getUserFollowing(req.params.username, skip, limit);
+        const following = Friend.getUserFollowing(req.params.username, skip, limit);
         if (!following) {
             throw new Error('Something went wrong');
         }
