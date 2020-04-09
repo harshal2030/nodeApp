@@ -152,7 +152,7 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        const followers = Friend.getUserFollowers(req.params.username, skip, limit);
+        const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
         for (let i=0; i<followers.length; i++) {
             followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
         }
@@ -160,6 +160,7 @@ router.get('/users/:username/followers', auth, async (req, res) => {
             throw new Error('Something went wrong');
         }
 
+        console.log(followers);
         res.send(followers);
     } catch (e) {
         res.status(500).send()
@@ -174,7 +175,7 @@ router.get('/users/:username/following', auth, async (req, res) => {
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        const following = Friend.getUserFollowing(req.params.username, skip, limit);
+        const following = await Friend.getUserFollowing(req.params.username, skip, limit);
         if (!following) {
             throw new Error('Something went wrong');
         }
@@ -183,6 +184,7 @@ router.get('/users/:username/following', auth, async (req, res) => {
             following[i].avatarPath = process.env.TEMPURL + following[i].avatarPath;
         }
 
+        console.log(following)
         res.send(following);
     } catch (e) {
         res.status(500).send()
