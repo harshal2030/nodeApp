@@ -291,6 +291,23 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
     }
 })
 
+
+//Get /posts/uuid4/stargazers?skip=0&limit=20
+router.get('/posts/:postId/stargazers', auth, async (req, res) => {
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+    try {
+        const stargazers = await Like.getStarGazers(req.params.postId, skip, limit);
+        for (let i = 0; i < stargazers.length; i++) {
+            stargazers[i]['avatarPath'] = process.env.TEMPURL + stargazers[i]['avatarPath'];
+        }
+        res.send(stargazers);
+    } catch (e) {
+        console.log(e)
+        res.status(500).send();
+    }
+})
+
 router.get('/posts/trends/:username', auth, (req, res) => {
     res.send('coming soon');
 })

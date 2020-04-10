@@ -164,12 +164,15 @@ User.init({
     },
     bio: {
         type: DataTypes.STRING,
+        defaultValue: "",
     },
     location:{
         type: DataTypes.STRING,
+        defaultValue: "",
     },
     website: {
         type: DataTypes.STRING,
+        defaultValue: "",
     },
     tokens: {
         type: DataTypes.ARRAY(DataTypes.STRING(2048)),

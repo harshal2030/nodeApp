@@ -113,6 +113,29 @@ class Like extends Model{
 
         return result[0].map(i => i.postId);
     }
+
+    /**
+     * Get users who liked post
+     * 
+     * @param {String} postId id of the post whose 
+     * @param {number} [skip] skips when end is reached
+     * @param {number} [limit] no. of entries to be returned on each call
+     * 
+     * @returns {Array} array of users who liked post 
+     */
+    static async getStarGazers(postId, skip = 0, limit = 20) {
+        const query = `SELECT likes."likedBy" AS "username", users."avatarPath", users."name" FROM
+            likes INNER JOIN users ON likes."likedBy" = users."username"
+            WHERE likes."postId" = :postId ORDER BY likes."createdAt" DESC 
+            OFFSET :skip LIMIT :limit`;
+
+        const result = await sequelize.query(query, {
+            replacements: {postId, skip, limit},
+            raw: true,
+        })
+
+        return result[0];
+    }
 }
 
 Like.init({
