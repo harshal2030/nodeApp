@@ -103,7 +103,7 @@ User.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9]+$",
+                args: "^[a-zA-Z0-9_]+$",
                 msg: 'Invalid username'
             }
         }
@@ -196,6 +196,6 @@ const func = async () => {
     await sequelize.sync({alter: true})
 }
 
-func()
+//func()
 
 module.exports = User

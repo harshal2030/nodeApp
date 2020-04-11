@@ -48,14 +48,19 @@ class Post extends Model {
     */
     static async getUserFeed(username, skip = 0, limit = 20) {
         const query = `WITH cte_posts AS (
-            SELECT posts.* FROM posts
-            INNER JOIN 
-			(SELECT * FROM friends WHERE friends."username"=:username) AS
-			followings ON
-            followings."followed_username" = posts."username"
-            UNION
-            SELECT posts.* FROM posts WHERE
-            posts."username"=:username
+            SELECT posts."postId", posts."username", posts."title",
+			posts."description", posts."mediaIncluded", posts."mediaPath",
+			posts."likes", posts."comments", posts."createdAt"
+			FROM posts
+            INNER JOIN friends ON
+            friends."followed_username" = posts."username" WHERE 
+			posts."type"='post' AND friends."username" = :username
+            UNION ALL
+            SELECT posts."postId", posts."username", posts."title",
+			posts."description", posts."mediaIncluded", posts."mediaPath",
+			posts."likes", posts."comments", posts."createdAt" 
+			FROM posts WHERE
+            posts."username"=:username AND posts."type" = 'post'
         )
         SELECT users."avatarPath", users."name", cte_posts.* FROM users
         INNER JOIN cte_posts ON
@@ -109,9 +114,9 @@ class Post extends Model {
 Post.init({
     postId: {
         type: DataTypes.STRING,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
         allowNull: false,
-        unique: true,
-        defaultValue: DataTypes.UUIDV4
     },
     username: {
         type: DataTypes.STRING,
@@ -119,23 +124,34 @@ Post.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9]+$",
+                args: "^[a-zA-Z0-9_]+$",
                 msg: 'Invalid username'
             }
         }
     },
-    postedFor: {
+    type: {
         type: DataTypes.STRING,
-        defaultValue: 'REPLACE>THIS',
+        allowNull: false,
+        defaultValue: 'post',
+    },
+    sharable: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
     title: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(60),
+        allowNull: true,
         validate: {
             min: 1,
         }
     },
-    description: {
+    replyTo: {
         type: DataTypes.STRING,
+        allowNull: true,
+    },
+    description: {
+        type: DataTypes.STRING(2048),
+        allowNull: true,
         validate: {
             min: 1
         }
@@ -146,15 +162,16 @@ Post.init({
     },
     mediaPath: {
         type: DataTypes.STRING,
+        allowNull: true,
     },
     likes: {
         type: DataTypes.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
     },
     comments: {
         type: DataTypes.INTEGER,
-        defaultValue: 0
-    },
+        defaultValue: 0,
+    }
 }, {
     sequelize,
     timestamps: true,
@@ -169,7 +186,7 @@ Post.init({
 })
 
 const func = async () => {
-    Post.sync({alter: true})
+    Post.sync({force: true})
 }
 //func()
 

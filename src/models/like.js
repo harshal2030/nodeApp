@@ -160,7 +160,7 @@ Like.init({
         validate: {
             len: [4, 25],
             is: {
-                args: "^[a-zA-Z0-9]+$",
+                args: "^[a-zA-Z0-9_]+$",
                 msg: 'Invalid username'
             }
         }
