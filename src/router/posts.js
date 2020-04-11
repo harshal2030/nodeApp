@@ -8,7 +8,6 @@ const uuidv4 = require('uuid/v4');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
-const Comment = require('./../models/comment');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -76,8 +75,8 @@ router.get('/posts', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit)
-        const bookmark = await Bookmark.getUserBookmarksIds(req.user.username, skip, limit)
-        const likes = await Like.getUserLikeIds(req.user.username, 'posts', skip, limit)
+        const bookmark = await Bookmark.getUserBookmarksIds(posts.map(post => post.postId), req.user.username)
+        const likes = await Like.getUserLikeIds(posts.map(post => post.postId), req.user.username)
         const data = []
 
         for(let i=0; i<posts.length; i++) {
@@ -175,7 +174,7 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
         const username = req.params.username;
         const posts = await Post.getUserPosts(username, skip, limit);
         if (req.user !== undefined) {
-            likes = await Like.getUserLikeId(req.params.username, req.user.username, skip, limit);
+            likes = await Like.getUserLikeIds(posts.map(post => post.postId), req.user.username);
         }
 
         if (!posts) {
@@ -211,13 +210,14 @@ router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) =>
         const raw = JSON.parse(req.body.info);
 
         const commentBody = {
-            postId: post.postId,
-            commentBy: req.user.username,
-            commentValue: raw.commentValue,
-            postedBy: post.username,
+            replyTo: post.postId,
+            username: req.user.username,
+            description: raw.commentValue,
+            type: 'reply',
             mediaPath: undefined,
             mediaIncluded: false,
         }
+
 
         const file = req.files;
         if (file.commentMedia !== undefined) {
@@ -243,15 +243,7 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
     const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
     try {
-        const comments = await Comment.findAll({
-            where: {
-                postId: req.params.postId
-            },
-            offset: skip,
-            limit,
-        })
-
-        res.send(comments);
+        
     } catch (e) {
         res.status(500).send();
     }

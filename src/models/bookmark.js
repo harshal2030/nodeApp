@@ -1,4 +1,4 @@
-const {Model, DataTypes} = require('sequelize');
+const {Model, DataTypes, Op} = require('sequelize');
 const sequelize = require('../db');
 const Post = require('./post');
 const validator = require('validator');
@@ -35,39 +35,30 @@ class Bookmark extends Model {
                 }
             )
 
-            return result[0].map(post => {
-                post.title = validator.unescape(post.title);
-                post.description = validator.unescape(post.description);
-
-                return post;
-            })
+            return result[0];
     }
 
     /**
      * Get ids of the bookmarks of specified user. 
      * 
-     * @param {String} username username of user requested
-     * @param {number} [skip] skips after end reached in frontend 
-     * @param {limit} [limit] no. of bookmarks returned on each call
+     * @param {Array} postId array of ids to be intersected with bookmark table
+     * @param {String} username username of user bookmarked
      * 
      * @returns {Array} array of bookmarks limited wrt to posts
      */
-    static async getUserBookmarksIds(username, skip=0, limit=20) {
-        const query = `SELECT sub1."postId" FROM
-                        (SELECT posts.* FROM posts ORDER BY posts."createdAt" 
-                        DESC OFFSET :skip LIMIT :limit)
-                        AS sub1 INNER JOIN 
-                        (SELECT * FROM bookmarks WHERE username=:username)
-                        AS sub2
-                        ON sub2."postId" = sub1."postId"
-                        AND sub2."postDate"=sub1."createdAt"`;
+    static async getUserBookmarksIds(postId, username) {
 
-        const results = await sequelize.query(query, {
-            replacements: {username, skip, limit},
-            raw: true
+        const results = await Bookmark.findAll({
+            where: {
+                postId: {
+                    [Op.in]: postId
+                },
+                username
+            },
+            attributes: ['postId']
         })
 
-        return results[0].map(j => j.postId)
+        return results.map(j => j.postId)
     }
 
     /**

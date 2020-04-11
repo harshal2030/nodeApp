@@ -1,8 +1,6 @@
 const {Model, DataTypes, QueryTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
-const Comment = require('./comment')
-const validator = require('validator')
 
 /**
  * Initiates the Post model for the app
@@ -32,10 +30,14 @@ class Post extends Model {
      * @returns {number} number of comments
      */
     static async comment(commentBody) {
-        await Comment.create(commentBody);
-        Post.increment({comments: 1}, {where: {postId: commentBody.postId}});
+        const {type, replyTo} = commentBody;
+        if (type !== 'reply' || replyTo === '') {
+            throw new Error('Not a valid type comment')
+        }
+        await Post.create(commentBody);
+        Post.increment({comments: 1}, {where: {postId: replyTo}});
 
-        return await Comment.count({where: {postId: commentBody.postId}})
+        return await Post.count({where: {replyTo: replyTo}})
     }
 
     /**
@@ -61,23 +63,18 @@ class Post extends Model {
 			posts."likes", posts."comments", posts."createdAt" 
 			FROM posts WHERE
             posts."username"=:username AND posts."type" = 'post'
+            ORDER BY "createdAt" DESC OFFSET :skip LIMIT :limit
         )
         SELECT users."avatarPath", users."name", cte_posts.* FROM users
         INNER JOIN cte_posts ON
-        cte_posts."username" = users."username"
-        ORDER BY cte_posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
+        cte_posts."username" = users."username"`;
 
         const result = await sequelize.query(query, {
             replacements: {username, skip, limit},
             raw: QueryTypes.SELECT
         })
 
-        return result[0].map(post => {
-            post.title = validator.unescape(post.title);
-            post.description = validator.unescape(post.description);
-
-            return post;
-        });
+        return result[0];
     }
 
     /**
@@ -102,12 +99,7 @@ class Post extends Model {
             raw: true,
         })
 
-        return result[0].map(post => {
-            post.title = validator.unescape(post.title);
-            post.description = validator.unescape(post.description);
-
-            return post;
-        });
+        return result[0];
     }
 }
 
@@ -141,6 +133,7 @@ Post.init({
     title: {
         type: DataTypes.STRING(60),
         allowNull: true,
+        defaultValue: '',
         validate: {
             min: 1,
         }
@@ -152,6 +145,7 @@ Post.init({
     description: {
         type: DataTypes.STRING(2048),
         allowNull: true,
+        defaultValue: '',
         validate: {
             min: 1
         }
@@ -177,12 +171,6 @@ Post.init({
     timestamps: true,
     modelName: 'posts',
     freezeTableName: true,
-    hooks: {
-        beforeSave: (post, options) => {
-            post.title = validator.escape(post.title);
-            post.description = validator.escape(post.description);
-        }
-    }
 })
 
 const func = async () => {

@@ -39,7 +39,7 @@ router.get('/misc', auth, async (req, res) => {
     try {
         if (req.query.option === 'bookmark') {
             const bookmarks = await Bookmark.getUserBookmarks(req.user.username, skip, limit);
-            const likes = await Like.getUserLikeIds(req.user.username, 'bookmarks', skip, limit);
+            const likes = await Like.getUserLikeIds(bookmarks.map(mark => mark.postId));
             for (let i=0; i<bookmarks.length; i++) {
                 bookmarks[i].mediaPath = process.env.TEMPURL + bookmarks[i].mediaPath;
                 bookmarks[i].avatarPath = process.env.TEMPURL + bookmarks[i].avatarPath;
