@@ -8,6 +8,7 @@ const uuidv4 = require('uuid/v4');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
+const User = require('./../models/user');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -240,11 +241,16 @@ router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) =>
 
 router.get('/posts/:postId/comment', auth, async (req, res) => {
 
-    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
-    const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
+    const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
-        
+        const comments = await Post.getComments(req.params.postId, skip, limit);
+        for (i=0; i<comments.length; i++) {
+            comments[i].avatarPath = process.env.TEMPURL + comments[i].avatarPath; 
+        }
+        res.send(comments);
     } catch (e) {
+        console.log(e)
         res.status(500).send();
     }
 })

@@ -67,7 +67,7 @@ class Post extends Model {
         )
         SELECT users."avatarPath", users."name", cte_posts.* FROM users
         INNER JOIN cte_posts ON
-        cte_posts."username" = users."username"`;
+        cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
 
         const result = await sequelize.query(query, {
             replacements: {username, skip, limit},
@@ -87,15 +87,41 @@ class Post extends Model {
      * @returns {Array} array of posts of auser 
      */
     static async getUserPosts(username, skip=0, limit=10) {
-        const query = `SELECT users."avatarPath", users."name", foo.* FROM 
-            (SELECT * FROM posts WHERE posts."username"=:username)
-            AS foo
+        const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
+            posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
+            posts."likes", posts."comments", posts."createdAt" FROM posts
             INNER JOIN users ON
-            users."username" = foo."username" 
-            ORDER BY foo."createdAt" DESC OFFSET :skip LIMIT :limit`;
+            users."username" = posts."username" WHERE 
+            posts."type"= 'post' AND posts."username"=:username 
+            ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
 
         const result = await sequelize.query(query, {
             replacements: {username, skip, limit},
+            raw: true,
+        })
+
+        return result[0];
+    }
+
+    /**
+     * Get array of comments based on postId
+     * 
+     * @param {String} postId id of post whose comments are to be fetched
+     * @param {number} [skip] skips after end is reached
+     * @param {number} [limit] no. of comments to be returned on each call
+     * 
+     * @returns {Array} array of comments
+     */
+    static async getComments(postId, skip = 0, limit = 10) {
+        const query = `SELECT posts."postId", posts."username", posts."title",
+            posts."description", posts."mediaIncluded", posts."mediaPath",
+            posts."likes", posts."comments",
+            posts."createdAt", users."name", users."avatarPath" FROM posts INNER JOIN users ON
+            users."username" = posts."username"
+            WHERE posts."replyTo"=:postId OFFSET :skip LIMIT :limit`;
+
+        const result = await sequelize.query(query, {
+            replacements: {postId, skip, limit},
             raw: true,
         })
 
