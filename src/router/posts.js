@@ -8,7 +8,6 @@ const uuidv4 = require('uuid/v4');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
-const User = require('./../models/user');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -123,18 +122,23 @@ router.get('/posts/:username/media', auth, async (req, res) => {
                 }
             },
             raw: true,
-            attributes: ['mediaPath', 'likes', 'comments'],
+            attributes: ['mediaPath', 'likes', 'comments', 'postId'],
             offset: skip,
             limit: limit,
         })
 
-        if (!media || media.length === 0) {
+        if (!media) {
             throw new Error('Mentioned user has no media associated.')
+        }
+
+        for (let i=0; i<media.length; i++) {
+            media[i].mediaPath = process.env.TEMPURL + media[i].mediaPath
         }
 
         res.send(media)
     } catch (e) {
-        res.status(404).send()
+        console.log(e)
+        res.status(404).send([])
     }
 })
 
@@ -147,6 +151,8 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const likes = await Like.getUserLikes(req.params.username, skip, limit);
+        const ids = await Like.getUserLikeIds(likes.map(i => i.postId), req.user.username);
+        const bookIds = await Bookmark.getUserBookmarksIds(likes.map(i => i.postId), req.user.username);
         if (!likes) {
             throw new Error('Nothing found for user');
         }
@@ -154,6 +160,18 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
         for (let i=0; i<likes.length; i++) {
             likes[i].mediaPath = process.env.TEMPURL + likes[i].mediaPath;
             likes[i].avatarPath = process.env.TEMPURL + likes[i].avatarPath;
+
+            if (ids.includes(likes[i].postId)) {
+                likes[i].liked = true;
+            } else {
+                likes[i].liked = false;
+            }
+
+            if (bookIds.includes(likes[i].postId)) {
+                likes[i].bookmarked = true;
+            } else {
+                likes[i].bookmarked = false;
+            }
         }
         res.send(likes);
     } catch (e) {
@@ -202,6 +220,11 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
 })
 
 router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) => {
+    /**
+     * Create comment reference to parent id
+     * 201 for success
+     * 400 for failure
+     */
     try {
         const post = await Post.findOne({where: {postId: req.params.postId}});
         if (!post) {
@@ -239,14 +262,20 @@ router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) =>
     }
 })
 
+// GET /posts/postid/comment?skip=0&limit=10
 router.get('/posts/:postId/comment', auth, async (req, res) => {
-
+    /**
+     * Get comment of specified post
+     * 201 for success
+     * 500 for failure
+     */
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const comments = await Post.getComments(req.params.postId, skip, limit);
         for (i=0; i<comments.length; i++) {
-            comments[i].avatarPath = process.env.TEMPURL + comments[i].avatarPath; 
+            comments[i].avatarPath = process.env.TEMPURL + comments[i].avatarPath;
+            comments[i].mediaPath = process.env.TEMPURL + comments[i].mediaPath; 
         }
         res.send(comments);
     } catch (e) {
@@ -256,6 +285,11 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
 })
 
 router.patch('/posts/:postId/like', auth, async (req, res) => {
+    /**
+     * Update like insert 1 if not present, delete if present
+     * 200 for insertion
+     * 400 for deletion
+     */
     try {
         const didExists = await Post.findOne({where: {postId: req.params.postId}})
         if (!didExists) {
@@ -292,6 +326,11 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
 
 //Get /posts/uuid4/stargazers?skip=0&limit=20
 router.get('/posts/:postId/stargazers', auth, async (req, res) => {
+    /**
+     * Get users who liked a specific post
+     * 200 for successfull retrieval
+     * 500 for errors
+     */
     const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip);
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {

@@ -23,7 +23,7 @@ class Bookmark extends Model {
             ORDER BY bookmarks."createdAt"
             OFFSET :skip LIMIT :limit
         )
-        SELECT users."avatarPath", cte_books.* FROM users
+        SELECT users."avatarPath", users."name", cte_books.* FROM users
         INNER JOIN cte_books
         ON cte_books."username" = users."username"`
         

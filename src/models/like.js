@@ -15,12 +15,14 @@ class Like extends Model{
      */
     static async getUserLikes(username, skip = 0, limit = 20) {
         const query = `WITH cte_likes AS (
-            SELECT posts.* FROM (SELECT "postId" FROM likes WHERE
-            likes."likedBy" = :username
-            ORDER BY likes."createdAt" OFFSET :skip LIMIT :limit)
-            AS user_likes INNER JOIN posts ON posts."postId" = user_likes."postId"
+            SELECT posts."postId", posts."username", posts."title",
+            posts."description", posts."mediaIncluded", posts."mediaPath",
+            posts."likes", posts."comments", posts."createdAt" FROM likes 
+            INNER JOIN posts ON posts."postId" = likes."postId"
+            WHERE likes."likedBy" = :username ORDER BY likes."createdAt" DESC
+            OFFSET :skip LIMIT :limit
         )
-        SELECT users."avatarPath", cte_likes.* FROM users INNER JOIN cte_likes ON
+        SELECT users."avatarPath", users."name", cte_likes.* FROM users INNER JOIN cte_likes ON
         cte_likes."username" = users."username"`
 
         const result = await sequelize.query(query, {
