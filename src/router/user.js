@@ -3,6 +3,7 @@ const router = express.Router()
 const User = require('./../models/user')
 const Friend = require('./../models/friend')
 const {auth} = require('./../middlewares/auth')
+const {Op} = require('sequelize');
 
 router.post('/users', async (req, res) => {
     /**
@@ -85,7 +86,20 @@ router.get('/users/:username/full', auth, async (req, res) => {
                 username: requester,
                 followed_username: req.params.username
             }
+        });
+
+        const follows_you = await Friend.findOne({
+            where: {
+                username: req.params.username,
+                followed_username: requester,
+            }
         })
+
+        if (!follows_you) {
+            userData['follows_you'] = false;
+        } else {
+            userData['follows_you'] = true;
+        }
 
         if (!isFollowing) {
             userData['isFollowing'] = false;
@@ -153,14 +167,32 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
+        const isFollowing = await Friend.findAll({
+            where: {
+                username: req.user.username,
+                followed_username: {
+                    [Op.in]: followers.map(user => user.username)
+                }
+            },
+            raw: true,
+            attributes: ['followed_username']
+        }).map(follo => follo.followed_username)
+
         for (let i=0; i<followers.length; i++) {
+            followers[i]['follows_you'] = true;
             followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
+
+            if (isFollowing.includes(followers[i]['username'])) {
+                followers[i]['isFollowing'] = true;
+            } else {
+                followers[i]['isFollowing'] = false;
+            }
         }
+
         if (!followers) {
             throw new Error('Something went wrong');
         }
 
-        console.log(followers);
         res.send(followers);
     } catch (e) {
         res.status(500).send()
@@ -176,15 +208,31 @@ router.get('/users/:username/following', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const following = await Friend.getUserFollowing(req.params.username, skip, limit);
+        const follows_you = await Friend.findAll({
+            where: {
+                followed_username: req.user.username,
+                username: {
+                    [Op.in]: following.map(user => user.username)
+                }
+            },
+            attributes: ['username'],
+            raw: true,
+        }).map(follo_you => follo_you.username)
+
         if (!following) {
             throw new Error('Something went wrong');
         }
 
         for (let i=0; i<following.length; i++) {
             following[i].avatarPath = process.env.TEMPURL + following[i].avatarPath;
+            following[i]['isFollowing'] = true;
+            if (follows_you.includes(following[i].username)) {
+                following[i]['follows_you'] = true;
+            } else {
+                following[i]['follows_you'] = false;
+            }
         }
 
-        console.log(following)
         res.send(following);
     } catch (e) {
         res.status(500).send()

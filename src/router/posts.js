@@ -4,7 +4,7 @@ const Post = require('./../models/post');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
-const uuidv4 = require('uuid/v4');
+const { v4 } = require('uuid');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
@@ -43,6 +43,8 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
      * 201 for success
      */
     try {
+        console.log(req.files.image);
+        console.log(req.body.info);
         post = JSON.parse(req.body.info); // post info
         post.username = req.user.username;
         post['name'] = req.user.name;
@@ -50,7 +52,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
         const file = req.files;
         if (file.image !== undefined) {
             console.log('if of imAGE')
-            const filename = `${uuidv4()}.png`;
+            const filename = `${v4()}.png`;
             const filePath = postImgPath + '/' + filename;
             await sharp(file.image[0].buffer).png().toFile(filePath);
             post['mediaPath'] = '/images/posts/' + filename;
@@ -246,7 +248,7 @@ router.post('/posts/:postId/comment', auth, mediaMiddleware, async (req, res) =>
         const file = req.files;
         if (file.commentMedia !== undefined) {
             console.log('if of imAGE')
-            const filename = `${uuidv4()}.png`;
+            const filename = `${v4()}.png`;
             const filePath = commentImgPath + '/' + filename;
             await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
             commentBody['mediaPath'] = '/images/comments/' + filename;
