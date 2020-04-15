@@ -136,6 +136,10 @@ router.post('/users/follow', auth, async (req, res) => {
 
 router.delete('/users/follow', auth, async (req, res) => {
     try {
+        if (req.user.username === req.body.username) {
+            throw new Error('Got identical value pair.')
+        }
+
         const unfollowed = await Friend.destroy({
             where: {
                 username: req.user.username,
@@ -143,17 +147,13 @@ router.delete('/users/follow', auth, async (req, res) => {
             }
         })
 
-        if (req.user.username === req.body.username) {
-            throw new Error('Got identical value pair.')
-        }
-
         if (!unfollowed) {
             throw new Error('No such entry exists')
         }
 
         res.send()
     } catch (e) {
-        res.send(400).send();
+        res.status(400).send();
     }
 })
 

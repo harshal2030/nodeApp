@@ -17,17 +17,20 @@ const server = http.createServer(app);
 const io = socketio(server);
 
 io.on('connection', (socket) => {
+    // console.log(socket.handshake.query.token);
     socket.on('query', async (query) => {
         try {
-            const users = await sequelize.query(`SELECT name, username, "avatarPath" FROM users 
+            const users_raw = await sequelize.query(`SELECT name, username, "avatarPath" FROM users 
             WHERE (LOWER(name) LIKE LOWER('${query}%') OR LOWER(username) LIKE LOWER('${query}%'))`, {
                 raw: true
             });
-        for (let i=0; i<users[0].length; i++) {
-            users[0][i].avatarPath = process.env.TEMPURL + users[0][i].avatarPath;
-        }
-        //console.log(users[0])
-        socket.emit('users', users[0]);
+
+            const users = users_raw[0];
+
+            for (let i=0; i<users.length; i++) {
+                users[i].avatarPath = process.env.TEMPURL + users[i].avatarPath;
+            }
+        socket.emit('users', users);
         } catch (e) {
             // Send users in similar location
         }

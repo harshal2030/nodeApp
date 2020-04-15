@@ -8,6 +8,7 @@ const { v4 } = require('uuid');
 const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
+const Friend = require('./../models/friend');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -337,8 +338,41 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const stargazers = await Like.getStarGazers(req.params.postId, skip, limit);
+        const isFollowing = await Friend.findAll({
+            where: {
+                username: req.user.username,
+                followed_username: {
+                    [Op.in]: stargazers.map(user => user.username)
+                }
+            },
+            attributes: ['followed_username'],
+            raw: true,
+        }).map(follo => follo.followed_username);
+        const follows_you = await Friend.findAll({
+            where: {
+                username: {
+                    [Op.in]: stargazers.map(user => user.username)
+                },
+                followed_username: req.user.username
+            },
+            attributes: ['username'],
+            raw: true,
+        }).map(follo => follo.username);
+
         for (let i = 0; i < stargazers.length; i++) {
             stargazers[i]['avatarPath'] = process.env.TEMPURL + stargazers[i]['avatarPath'];
+
+            if (isFollowing.includes(stargazers[i]['username'])) {
+                stargazers[i]['isFollowing'] = true;
+            } else {
+                stargazers[i]['isFollowing'] = false;
+            }
+
+            if (follows_you.includes(stargazers[i]['username'])) {
+                stargazers[i]['follows_you'] = true;
+            } else {
+                stargazers[i]['follows_you'] = false;
+            }
         }
         res.send(stargazers);
     } catch (e) {
