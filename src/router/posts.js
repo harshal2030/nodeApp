@@ -9,6 +9,7 @@ const Bookmark = require('./../models/bookmark');
 const {Op} = require('sequelize');
 const Like = require('./../models/like');
 const Friend = require('./../models/friend');
+const { maxDate, minDate } = require('./../utils/dateFunctions')
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, '../../public/images/posts')
@@ -99,11 +100,50 @@ router.get('/posts', auth, async (req, res) => {
             }
         }
 
-        res.send(data);
+        res.send({
+            data, likeId: likes,
+            bookmarkIds: bookmark,
+            maxDate: maxDate(posts),
+            minDate: minDate(posts)
+        });
     } catch (e) {
         console.log(e)
         res.status(400).send(e)
     }
+})
+
+router.get('/posts/:postId', async (req, res) => {
+    try {
+        const post = await Post.findOne({
+            where: {
+                postId: req.params.postId,
+            },
+            attributes: {
+                exclude: ['updatedAt']
+            },
+            raw: true,
+        })
+
+        if (!post) {
+            throw new Error('No such post found')
+        }
+
+        if (post.replyTo !== null) {
+            const parent = await Post.findOne({
+                where: {
+                    postId: post.replyTo,
+                },
+                attributes: ['username'],
+                raw: true
+            })
+
+            post['parentUsername'] = parent.username;
+        }
+
+        res.send(post);
+    } catch (e) {
+        res.sendStatus(404)
+    } 
 })
 
 //GET /posts/username/media?skip=0&limit=20
