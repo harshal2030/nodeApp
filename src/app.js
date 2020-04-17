@@ -10,14 +10,33 @@ const sequelize = require('./db');
 const Like = require('./models/like');
 const Post = require('./models/post');
 const User = require('./models/user');
+const Friend = require('./models/friend');
+const auth = require('./middlewares/socketAuth');
+const {Op} = require('sequelize');
 
 const app = express();
 const server = http.createServer(app);
 
 const io = socketio(server);
 
-io.on('connection', (socket) => {
-    // console.log(socket.handshake.query.token);
+io.use((socket, next) => {
+    socket.username = 'harshal'
+    next()
+})
+const searchSocket = socketio(server, {
+    path: '/search'
+})
+const likeSocket = socketio(server, {
+    path: '/like'
+})
+const validationSocket = socketio(server, {
+    path: '/validation'
+})
+
+searchSocket.use(auth);
+likeSocket.use(auth);
+
+searchSocket.on('connection', (socket) => {
     socket.on('query', async (query) => {
         try {
             const users_raw = await sequelize.query(`SELECT name, username, "avatarPath" FROM users 
@@ -27,15 +46,51 @@ io.on('connection', (socket) => {
 
             const users = users_raw[0];
 
+            const isFollowing = await Friend.findAll({
+                where: {
+                    username: socket.user.username,
+                    followed_username: {
+                        [Op.in]: users.map(user => user.rusername)
+                    }
+                },
+                attributes: ['followed_username'],
+                raw: true,
+            }).map(follo => follo.followed_username)
+
+            const follows_you = await Friend.findAll({
+                where: {
+                    followed_username: socket.user.username,
+                    username: {
+                        [Op.in]: users.map(user => user.username)
+                    }
+                },
+                attributes: ['username'],
+                raw: true,
+            }).map(follo => follo.username)
+
             for (let i=0; i<users.length; i++) {
                 users[i].avatarPath = process.env.TEMPURL + users[i].avatarPath;
+
+                if (isFollowing.includes(users[i].username)) {
+                    users[i]['isFollowing'] = true
+                } else {
+                    users[i]['isFollowing'] = false
+                }
+
+                if (follows_you.includes(users[i].username)) {
+                    users[i]['follows_you'] = true;
+                } else {
+                    users[i]['follows_you'] = false;
+                }
             }
         socket.emit('users', users);
         } catch (e) {
             // Send users in similar location
         }
     })
+})
 
+likeSocket.on('connection', (socket) => {
     socket.on('hitLike', async (data) => {
         try {
             const didPostExists = await Post.findOne({
@@ -48,7 +103,7 @@ io.on('connection', (socket) => {
 
             const isPresent = await Like.findOne({where:{
                 postId: data.postId,
-                likedBy: data.username,
+                likedBy: socket.user.username,
                 postedBy: data.postedBy
             }})
 
@@ -56,22 +111,24 @@ io.on('connection', (socket) => {
                 throw 'Present'
             }
 
-            const likes = await Post.like(data.postId, data.username, data.postedBy);
-            io.emit('likeUpdate', {postId: data.postId, update: likes});
+            const likes = await Post.like(data.postId, socket.user.username, data.postedBy);
+            likeSocket.emit('likeUpdate', {postId: data.postId, update: likes});
         } catch (e) {
             if (e === 'Present') {
                 await Like.destroy({where: {
                     postId: data.postId,
-                    likedBy: data.username,
+                    likedBy: socket.user.username,
                     postedBy: data.postedBy,
                 }})
                 Post.increment({likes: -1}, {where: {postId: data.postId}})
             }
             const likes = await Like.count({where: {postId: data.postId}})
-            io.emit('likeUpdate', {postId: data.postId, update: likes})
+            likeSocket.emit('likeUpdate', {postId: data.postId, update: likes})
         }
     })
+})
 
+validationSocket.on('connection', (socket) => {
     socket.on('usernameValidation', async (username) => {
         const userCount = await User.count({
             where: {

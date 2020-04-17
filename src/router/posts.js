@@ -56,7 +56,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
             console.log('if of imAGE')
             const filename = `${v4()}.png`;
             const filePath = postImgPath + '/' + filename;
-            await sharp(file.image[0].buffer).png().toFile(filePath);
+            sharp(file.image[0].buffer).png().toFile(filePath);
             post['mediaPath'] = '/images/posts/' + filename;
             post['mediaIncluded'] = true;    
         }
@@ -101,7 +101,8 @@ router.get('/posts', auth, async (req, res) => {
         }
 
         res.send({
-            data, likeId: likes,
+            data,
+            likeId: likes,
             bookmarkIds: bookmark,
             maxDate: maxDate(posts),
             minDate: minDate(posts)
@@ -109,6 +110,46 @@ router.get('/posts', auth, async (req, res) => {
     } catch (e) {
         console.log(e)
         res.status(400).send(e)
+    }
+})
+
+// GET /posts/username?skip=0&limit=20
+router.get('/posts/:username', optionalAuth, async (req, res) => {
+    /**
+     * Route for posts of a user (req.params.username)
+     * 404 if no posts
+     * 200 with atleast one post
+     */
+    let likes;
+    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
+    const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
+    try {
+        const username = req.params.username;
+        const posts = await Post.getUserPosts(username, skip, limit);
+        if (req.user !== undefined) {
+            likes = await Like.getUserLikeIds(posts.map(post => post.postId), req.user.username);
+        }
+
+        if (!posts) {
+            return res.status(404).send('No Posts yet')
+        }
+        for (let i=0; i<posts.length; i++) {
+            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
+            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
+
+            if (req.user !== undefined) {
+                if (likes.includes(posts[i].postId)) {
+                    posts[i]['liked'] = true
+                } else {
+                    posts[i]['liked'] = false
+                }
+            }
+        }
+
+        res.send(posts)
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e)
     }
 })
 
@@ -219,46 +260,6 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
         res.send(likes);
     } catch (e) {
         res.status(404).send();
-    }
-})
-
-// GET /posts/username?skip=0&limit=20
-router.get('/posts/:username', optionalAuth, async (req, res) => {
-    /**
-     * Route for posts of a user (req.params.username)
-     * 404 if no posts
-     * 200 with atleast one post
-     */
-    let likes;
-    const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
-    const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
-    try {
-        const username = req.params.username;
-        const posts = await Post.getUserPosts(username, skip, limit);
-        if (req.user !== undefined) {
-            likes = await Like.getUserLikeIds(posts.map(post => post.postId), req.user.username);
-        }
-
-        if (!posts) {
-            return res.status(404).send('No Posts yet')
-        }
-        for (let i=0; i<posts.length; i++) {
-            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
-            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
-
-            if (req.user !== undefined) {
-                if (likes.includes(posts[i].postId)) {
-                    posts[i]['liked'] = true
-                } else {
-                    posts[i]['liked'] = false
-                }
-            }
-        }
-
-        res.send(posts)
-    } catch (e) {
-        console.log(e)
-        res.status(500).send(e)
     }
 })
 

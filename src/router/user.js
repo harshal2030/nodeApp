@@ -167,6 +167,7 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const followers = await Friend.getUserFollowers(req.params.username, skip, limit);
+
         const isFollowing = await Friend.findAll({
             where: {
                 username: req.user.username,
@@ -178,14 +179,30 @@ router.get('/users/:username/followers', auth, async (req, res) => {
             attributes: ['followed_username']
         }).map(follo => follo.followed_username)
 
+        const follows_you = await Friend.findAll({
+            where: {
+                followed_username: req.user.username,
+                username: {
+                    [Op.in]: followers.map(user => user.username)
+                }
+            },
+            attributes: ['username'],
+            raw: true,
+        }).map(follo_you => follo_you.username)
+
         for (let i=0; i<followers.length; i++) {
-            followers[i]['follows_you'] = true;
             followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
 
             if (isFollowing.includes(followers[i]['username'])) {
                 followers[i]['isFollowing'] = true;
             } else {
                 followers[i]['isFollowing'] = false;
+            }
+
+            if (follows_you.includes(followers[i].username)) {
+                followers[i]['follows_you'] = true;
+            } else {
+                followers[i]['follows_you'] = false;
             }
         }
 
@@ -208,6 +225,18 @@ router.get('/users/:username/following', auth, async (req, res) => {
     const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const following = await Friend.getUserFollowing(req.params.username, skip, limit);
+
+        const isFollowing = await Friend.findAll({
+            where: {
+                username: req.user.username,
+                followed_username: {
+                    [Op.in]: following.map(user => user.username)
+                }
+            },
+            raw: true,
+            attributes: ['followed_username']
+        }).map(follo => follo.followed_username)
+
         const follows_you = await Friend.findAll({
             where: {
                 followed_username: req.user.username,
@@ -225,11 +254,17 @@ router.get('/users/:username/following', auth, async (req, res) => {
 
         for (let i=0; i<following.length; i++) {
             following[i].avatarPath = process.env.TEMPURL + following[i].avatarPath;
-            following[i]['isFollowing'] = true;
+
             if (follows_you.includes(following[i].username)) {
                 following[i]['follows_you'] = true;
             } else {
                 following[i]['follows_you'] = false;
+            }
+
+            if (isFollowing.includes(following[i].username)) {
+                following[i]['isFollowing'] = true;
+            } else {
+                following[i]['isFollowing'] = false;
             }
         }
 
