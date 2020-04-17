@@ -17,12 +17,6 @@ const {Op} = require('sequelize');
 const app = express();
 const server = http.createServer(app);
 
-const io = socketio(server);
-
-io.use((socket, next) => {
-    socket.username = 'harshal'
-    next()
-})
 const searchSocket = socketio(server, {
     path: '/search'
 })
