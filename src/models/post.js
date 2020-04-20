@@ -78,6 +78,33 @@ class Post extends Model {
     }
 
     /**
+     * Get the array of replies recieved in posts.
+     * @param {String} username username of the requester
+     * @param {Array} postIds ids of the post, need to be excluded
+     * @param {number} [skip] 
+     * @param {number} [limit]
+     * @returns {Array} array of post replies 
+     */
+    static async userHomeFeedComments(username, postIds, skip = 0, limit= 20) {
+        const query = `with cte_replies AS (
+            SELECT posts.* FROM posts INNER JOIN friends ON 
+            friends."followed_username" = posts."username"
+            WHERE posts."type" = 'reply' AND friends."username"=:username
+            AND posts."replyTo" IN (:postIds)
+            ORDER BY posts."createdAt" OFFSET :skip LIMIT :limit
+        )
+        SELECT users."avatarPath", users."name", cte_replies.* FROM users INNER JOIN
+        cte_replies ON cte_replies."username" = users."username"`;
+
+        const result = await sequelize.query(query, {
+            replacements: {username, postIds, skip, limit},
+            raw: true,
+        });
+
+        return result[0];
+    }
+
+    /**
      * Get posts of a user 
      * 
      * @param {String} username username of user
@@ -200,7 +227,7 @@ Post.init({
 })
 
 const func = async () => {
-    Post.sync({force: true})
+    Post.sync()
 }
 //func()
 
