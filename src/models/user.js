@@ -103,7 +103,7 @@ User.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_]+$",
+                args: "^[a-zA-Z0-9_.]+$",
                 msg: 'Invalid username'
             }
         }
