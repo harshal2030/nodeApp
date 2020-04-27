@@ -6,6 +6,7 @@ const sha512 = require('crypto-js/sha512')
 const fs = require('fs')
 const path = require('path')
 const Friend = require('./friend');
+const {usernamePattern} = require('./../utils/regexPatterns')
 
 const keyPath = path.join(__dirname, '../keys/private.key')
 const privateKey = fs.readFileSync(keyPath ,'utf-8');
@@ -103,7 +104,7 @@ User.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_.]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }

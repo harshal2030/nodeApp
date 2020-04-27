@@ -13,6 +13,7 @@ const User = require('./models/user');
 const Friend = require('./models/friend');
 const auth = require('./middlewares/socketAuth');
 const {Op} = require('sequelize');
+const tagRouter = require('./router/tags');
 
 const app = express();
 const server = http.createServer(app);
@@ -155,11 +156,13 @@ validationSocket.on('connection', (socket) => {
 const publicDirPath = path.join(__dirname, '../public')
 
 app.use(express.json())
-app.use(userRouter)
+app.use(express.static(publicDirPath))
+
+app.use(tagRouter)
 app.use(postRouter)
+app.use(userRouter)
 app.use(miscRouter)
 app.use(settingRouter)
-app.use(express.static(publicDirPath))
 
 app.get('/date', (req, res) => {
     const today = new Date()

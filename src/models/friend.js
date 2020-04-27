@@ -1,5 +1,6 @@
 const {DataTypes, Model} = require('sequelize');
 const sequelize = require('../db')
+const {usernamePattern} = require('./../utils/regexPatterns')
 
 class Friend extends Model {
 
@@ -59,7 +60,7 @@ Friend.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_.]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }
@@ -70,7 +71,7 @@ Friend.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_.]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }

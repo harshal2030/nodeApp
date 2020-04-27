@@ -1,0 +1,65 @@
+const {DataTypes, Model} = require('sequelize');
+const sequelize = require('./../db')
+
+class Tag extends Model {
+    /**
+     * Update table based on tag type
+     * @param {String} tag tag to be updated in table (prefix included)
+     * @returns {void}
+     */
+    static async createUpdateTag(tag) {
+        const type = tag[0] === '#' ? '#' : '$';
+        const tag = tag.slice(1);
+        try {
+            const ifExists = await Tag.findOne({
+                where: {
+                    tag
+                }
+            })
+            if (!ifExists) {
+                Tag.create({tag, type, posts: 1});
+            } else {
+                Tag.increment({posts: 1}, {where: {tag}})
+            }
+        } catch (e) {
+            // do nothing
+        }
+    }
+}
+
+Tag.init({
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        allowNull: false,
+        primaryKey: true,
+    },
+    tag: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+        unique: true,
+    },
+    type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: '#',
+    },
+    posts: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    }
+}, {
+    sequelize,
+    modelName: 'tags',
+    freezeTableName: true,
+    timestamps: true,
+})
+
+const func = async () => {
+    await Tag.sync()
+}
+
+func()
+
+module.exports = Tag;

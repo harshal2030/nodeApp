@@ -10,6 +10,7 @@ const { Op } = require("sequelize");
 const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
+const {hashTagPattern, handlePattern} = require('./../utils/regexPatterns')
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, "../../public/images/posts");
@@ -50,6 +51,7 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
         post = JSON.parse(req.body.info); // post info
         post.username = req.user.username;
         post["name"] = req.user.name;
+        post['tags'] = post['description'] === undefined ? [] : post['description'].match(hashTagPattern)
 
         const file = req.files;
         if (file.image !== undefined) {
@@ -81,20 +83,18 @@ router.get("/posts", auth, async (req, res) => {
         req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit);
-        const bookmark = await Bookmark.getUserBookmarksIds(
+        const bookmarkRef = Bookmark.getUserBookmarksIds(
             posts.map((post) => post.postId),
             req.user.username
         );
-        const likes = await Like.getUserLikeIds(
+        const likesRef = Like.getUserLikeIds(
             posts.map((post) => post.postId),
             req.user.username
         );
-        const replies = await Post.userHomeFeedComments(
-            req.user.username,
-            posts.map((post) => post.postId),
-            skip,
-            limit
-        );
+
+        const parallelResp = await Promise.all([bookmarkRef, likesRef])
+        const bookmark = parallelResp[0];
+        const likes = parallelResp[1];
 
         const data = [];
 
@@ -121,7 +121,6 @@ router.get("/posts", auth, async (req, res) => {
             bookmarkIds: bookmark,
             maxDate: maxDate(posts),
             minDate: minDate(posts),
-            replies
         });
     } catch (e) {
         console.log(e);

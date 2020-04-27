@@ -1,5 +1,6 @@
 const {Model, DataTypes} = require('sequelize');
 const sequelize = require('../db');
+const {usernamePattern} = require('./../utils/regexPatterns')
 
 class Block extends Model {}
 
@@ -12,10 +13,24 @@ Block.init({
     blocked: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            len: [1, 26],
+            is: {
+                args: usernamePattern,
+                msg: 'Invalid username'
+            }
+        }
     },
     blockedBy: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            len: [1, 26],
+            is: {
+                args: usernamePattern,
+                msg: 'Invalid username'
+            }
+        }
     }
 }, {
     sequelize,

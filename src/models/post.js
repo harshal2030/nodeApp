@@ -1,6 +1,8 @@
 const {Model, DataTypes, QueryTypes} = require('sequelize');
 const sequelize = require('../db')
 const Like = require('./like')
+const {usernamePattern} = require('./../utils/regexPatterns')
+const Tag = require('./tag');
 
 /**
  * Initiates the Post model for the app
@@ -169,7 +171,7 @@ Post.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_.]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }
@@ -218,16 +220,38 @@ Post.init({
     comments: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
+    },
+    tags: {
+        type: DataTypes.ARRAY(DataTypes.STRING(150)),
+        defaultValue: []
+    },
+    mentions: {
+        type: DataTypes.ARRAY(DataTypes.STRING(30)),
+        defaultValue: []
     }
 }, {
     sequelize,
     timestamps: true,
     modelName: 'posts',
     freezeTableName: true,
+    hooks: {
+        afterCreate: async (post, options) => {
+            try {
+                const tags = post['tags'];
+                if (tags.length !== 0) {
+                    tags.forEach(tag => {
+                        Tag.createUpdateTag(tag)
+                    })
+                }
+            } catch (e) {
+                // do nothing
+            }
+        }
+    }
 })
 
 const func = async () => {
-    Post.sync()
+    Post.sync({alter: true})
 }
 //func()
 

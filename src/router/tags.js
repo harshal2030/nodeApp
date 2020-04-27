@@ -1,0 +1,30 @@
+const express = require('express');
+const Tag = require('../models/tag');
+const {Op} = require('sequelize');
+
+const router = express.Router();
+
+router.get('/hashtags/:tag', async (req, res) => {
+    try {
+        const tags = await Tag.findAll({
+            where: {
+                tag: {
+                    [Op.like]: req.params.tag
+                }
+            },
+            limit: 6,
+        })
+
+        res.send(tags);
+
+        if (!tags) {
+            throw new Error('No such tag')
+        }
+
+        res.send(tags)
+    } catch (e) {
+        res.sendStatus(404)
+    }
+})
+
+module.exports = router;
