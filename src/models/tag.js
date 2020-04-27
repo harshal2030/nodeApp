@@ -9,7 +9,7 @@ class Tag extends Model {
      */
     static async createUpdateTag(tag) {
         const type = tag[0] === '#' ? '#' : '$';
-        const tag = tag.slice(1);
+        const _tag = tag.slice(1);
         try {
             const ifExists = await Tag.findOne({
                 where: {
@@ -17,9 +17,9 @@ class Tag extends Model {
                 }
             })
             if (!ifExists) {
-                Tag.create({tag, type, posts: 1});
+                Tag.create({tag: _tag, type, posts: 1});
             } else {
-                Tag.increment({posts: 1}, {where: {tag}})
+                Tag.increment({posts: 1}, {where: {tag: _tag}})
             }
         } catch (e) {
             // do nothing
