@@ -13,7 +13,7 @@ class Tag extends Model {
         try {
             const ifExists = await Tag.findOne({
                 where: {
-                    tag
+                    tag: _tag,
                 }
             })
             if (!ifExists) {

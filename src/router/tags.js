@@ -8,9 +8,7 @@ router.get('/hashtags/:tag', async (req, res) => {
     try {
         const tags = await Tag.findAll({
             where: {
-                tag: {
-                    [Op.like]: req.params.tag
-                }
+                tag: req.params.tag,
             },
             limit: 6,
         })

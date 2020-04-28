@@ -14,6 +14,7 @@ const Friend = require('./models/friend');
 const auth = require('./middlewares/socketAuth');
 const {Op} = require('sequelize');
 const tagRouter = require('./router/tags');
+const Tag = require('./models/tag');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,9 +28,13 @@ const likeSocket = socketio(server, {
 const validationSocket = socketio(server, {
     path: '/validation'
 })
+const tagSocket = socketio(server, {
+    path: '/tags'
+})
 
 searchSocket.use(auth);
 likeSocket.use(auth);
+tagSocket.use(auth);
 
 searchSocket.on('connection', (socket) => {
     socket.on('query', async (query) => {
@@ -119,6 +124,30 @@ likeSocket.on('connection', (socket) => {
             }
             const likes = await Like.count({where: {postId: data.postId}})
             likeSocket.emit('likeUpdate', {postId: data.postId, update: likes})
+        }
+    })
+})
+
+tagSocket.on('connection', (socket) => {
+    console.log('connected')
+    socket.on('findTag', async (tag) => {
+        type = tag[0] === '#' ? '#' : '$';
+
+        try {
+            const tags = await Tag.findAll({
+                where: {
+                    tag: {
+                        [Op.startsWith]: tag.slice(1),
+                    }
+                },
+                limit: 6,
+            })
+
+            console.log(tag.slice(1));
+
+            socket.emit('tags', tags)
+        } catch (e) {
+            socket.emit('tags', [])
         }
     })
 })

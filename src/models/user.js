@@ -194,7 +194,7 @@ User.init({
 })
 
 const func = async () => {
-    await sequelize.sync({alter: true})
+    await sequelize.sync()
 }
 
 //func()

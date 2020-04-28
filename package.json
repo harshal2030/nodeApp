@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "env-cmd ./config/test.env jest --watch --runInBand",
+    "test": "env-cmd ./config/test.env jest --watchAll --runInBand",
     "dev": "env-cmd ./config/dev.env nodemon src/index.js",
     "start": "node src/index.js"
   },
@@ -32,6 +32,8 @@
     "validator": "^12.2.0"
   },
   "devDependencies": {
+    "@types/faker": "^4.1.11",
+    "faker": "^4.1.0",
     "jest": "^25.1.0",
     "supertest": "^4.0.2"
   }
