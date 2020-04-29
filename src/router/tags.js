@@ -13,8 +13,6 @@ router.get('/hashtags/:tag', async (req, res) => {
             limit: 6,
         })
 
-        res.send(tags);
-
         if (!tags) {
             throw new Error('No such tag')
         }

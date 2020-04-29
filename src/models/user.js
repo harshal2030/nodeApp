@@ -78,6 +78,36 @@ class User extends Model {
             following
         }
     }
+
+    /**
+     * function mainly written for the suggestion part, get the usernames on match
+     * 
+     * @param {String} username username of the requester
+     * @param {String} searchQuery query (username) to be searched in database
+     * @param {number} [limit] no. of users to be returned on each call
+     * 
+     * @returns {Array} array of objects with name, username, avatarPath
+     */
+    static async getMatchingUsers(username, searchQuery, limit = 6) {
+        const query = `WITH cte_users AS (
+            SELECT users."avatarPath", users."name", users."username" FROM users
+            INNER JOIN friends ON friends."username" = users."username"
+            WHERE friends."username" LIKE :searchQuery 
+            AND friends."followed_username" = :username
+            UNION ALL
+            SELECT users."avatarPath", users."name", users."username" FROM users WHERE
+            users."username" LIKE :searchQuery AND users."private" = false
+            LIMIT :limit
+        )
+        SELECT DISTINCT ON (cte_users."username") cte_users.* FROM cte_users`
+
+        const result = await sequelize.query(query, {
+            replacements: {username, searchQuery: `${searchQuery}%`, limit},
+            raw: true,
+        })
+
+        return result[0];
+    }
 }
 
 User.init({
@@ -178,6 +208,10 @@ User.init({
     tokens: {
         type: DataTypes.ARRAY(DataTypes.STRING(2048)),
         defaultValue: [],
+    },
+    private: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     }
 }, {
     sequelize,
@@ -194,7 +228,8 @@ User.init({
 })
 
 const func = async () => {
-    await sequelize.sync()
+    // await sequelize.sync()
+    await User.sync({alter: true})
 }
 
 //func()

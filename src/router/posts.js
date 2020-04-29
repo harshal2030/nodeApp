@@ -10,7 +10,7 @@ const { Op } = require("sequelize");
 const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
-const {hashTagPattern, handlePattern} = require('./../utils/regexPatterns')
+const { hashTagPattern, handlePattern } = require('./../utils/regexPatterns')
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, "../../public/images/posts");
@@ -46,12 +46,10 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
      * 201 for success
      */
     try {
-        console.log(req.files.image);
-        console.log(req.body.info);
         post = JSON.parse(req.body.info); // post info
         post.username = req.user.username;
-        post["name"] = req.user.name;
         post['tags'] = post['description'] === undefined ? [] : post['description'].match(hashTagPattern)
+        post['mentions'] = post['description'] === undefined ? [] : post['description'].match(handlePattern)
 
         const file = req.files;
         if (file.image !== undefined) {

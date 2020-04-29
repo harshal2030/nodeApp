@@ -52,7 +52,7 @@ class Post extends Model {
     */
     static async getUserFeed(username, skip = 0, limit = 20) {
         const query = `WITH cte_posts AS (
-            SELECT posts."postId", posts."username", posts."title",
+            SELECT posts."id", posts."postId", posts."username", posts."title",
 			posts."description", posts."mediaIncluded", posts."mediaPath",
 			posts."likes", posts."comments", posts."createdAt"
 			FROM posts
@@ -60,7 +60,7 @@ class Post extends Model {
             friends."followed_username" = posts."username" WHERE 
 			posts."type"='post' AND friends."username" = :username
             UNION ALL
-            SELECT posts."postId", posts."username", posts."title",
+            SELECT posts."id", posts."postId", posts."username", posts."title",
 			posts."description", posts."mediaIncluded", posts."mediaPath",
 			posts."likes", posts."comments", posts."createdAt" 
 			FROM posts WHERE
@@ -159,6 +159,10 @@ class Post extends Model {
 }
 
 Post.init({
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+    },
     postId: {
         type: DataTypes.STRING,
         primaryKey: true,

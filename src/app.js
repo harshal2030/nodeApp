@@ -131,23 +131,33 @@ likeSocket.on('connection', (socket) => {
 tagSocket.on('connection', (socket) => {
     console.log('connected')
     socket.on('findTag', async (tag) => {
-        type = tag[0] === '#' ? '#' : '$';
+        const type = tag[0] === '#' ? '#' : '@';
 
         try {
-            const tags = await Tag.findAll({
-                where: {
-                    tag: {
-                        [Op.startsWith]: tag.slice(1),
-                    }
-                },
-                limit: 6,
-            })
+            if (type === '#') {
+                const tags = await Tag.findAll({
+                    where: {
+                        tag: {
+                            [Op.startsWith]: tag.slice(1),
+                        }
+                    },
+                    limit: 6,
+                })
+    
+                socket.emit('tags', tags)
+            }
 
-            console.log(tag.slice(1));
+            if (type === '@') {
+                const users = await User.getMatchingUsers(socket.user.username, tag.slice(1));
 
-            socket.emit('tags', tags)
+                for (let i=0; i<users.length; i++) {
+                    users[i]['avatarPath'] = process.env.TEMPURL + users[i].avatarPath;
+                }
+
+                socket.emit('handles', users);
+            }
         } catch (e) {
-            socket.emit('tags', [])
+            // do nothing
         }
     })
 })
