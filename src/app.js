@@ -129,7 +129,6 @@ likeSocket.on('connection', (socket) => {
 })
 
 tagSocket.on('connection', (socket) => {
-    console.log('connected')
     socket.on('findTag', async (tag) => {
         const type = tag[0] === '#' ? '#' : '@';
 
