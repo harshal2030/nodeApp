@@ -15,7 +15,7 @@ router.post('/users', async (req, res) => {
     try {
         const user = await User.create(req.body);
         user['avatarPath'] = process.env.TEMPURL + user['avatarPath'];
-        const token = user.generateAuthToken();
+        const token = await user.generateAuthToken();
         const userData = await user.removeSensetiveUserData()
         res.status(201).send({user: userData, token})
     } catch (e) {
@@ -59,7 +59,6 @@ router.get('/users/:username', async (req, res) => {
         userData['headerPhoto'] = process.env.TEMPURL + user['headerPhoto'];
         res.send(userData);
     } catch (e) {
-        console.log(e)
         res.status(404).send()
     }
 })

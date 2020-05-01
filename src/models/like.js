@@ -1,6 +1,7 @@
 const {DataTypes, Model, Op} = require('sequelize');
 const sequelize = require('../db');
 const validator = require('validator');
+const {usernamePattern} = require('./../utils/regexPatterns')
 
 class Like extends Model{
 
@@ -95,7 +96,7 @@ Like.init({
         validate: {
             len: [4, 25],
             is: {
-                args: "^[a-zA-Z0-9_]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }
@@ -106,7 +107,7 @@ Like.init({
         validate: {
             len: [4, 25],
             is: {
-                args: "^[a-zA-Z0-9_]+$",
+                args: "^[a-zA-Z0-9_.]+$",
                 msg: 'Invalid username'
             }
         }

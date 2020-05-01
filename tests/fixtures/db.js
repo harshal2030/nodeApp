@@ -1,7 +1,7 @@
 const User = require("./../../src/models/user")
 const Post = require("../../src/models/post")
 const jwt = require("jsonwebtoken")
-const uuidv4 = require("uuid/v4")
+const {v4} = require("uuid")
 
 const user1 = {
     name: "harshal",
@@ -26,7 +26,7 @@ const user2 = {
 const post1 = {
     username: "harshal2030",
     name: "harshal",
-    postId: uuidv4(),
+    postId: v4(),
     title: "post 1",
     description: "body 1"
 }
@@ -34,7 +34,7 @@ const post1 = {
 const post2 = {
     username: "harshal2030",
     name: "harshal",
-    postId: uuidv4(),
+    postId: v4(),
     title: "post 2",
     description: "body 2"
 }
@@ -42,7 +42,7 @@ const post2 = {
 const post3 = {
     username: "mike2030",
     name: "mike",
-    postId: uuidv4(),
+    postId: v4(),
     title: "post 3",
     description: "body 3"
 }
@@ -50,7 +50,7 @@ const post3 = {
 const post4 = {
     username: "mike2030",
     name: "mike",
-    postId: uuidv4(),
+    postId: v4(),
     title: "post 4",
     description: "body 4"
 }

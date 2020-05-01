@@ -13,6 +13,8 @@ const User = require('./models/user');
 const Friend = require('./models/friend');
 const auth = require('./middlewares/socketAuth');
 const {Op} = require('sequelize');
+const tagRouter = require('./router/tags');
+const Tag = require('./models/tag');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,9 +28,13 @@ const likeSocket = socketio(server, {
 const validationSocket = socketio(server, {
     path: '/validation'
 })
+const tagSocket = socketio(server, {
+    path: '/tags'
+})
 
 searchSocket.use(auth);
 likeSocket.use(auth);
+tagSocket.use(auth);
 
 searchSocket.on('connection', (socket) => {
     socket.on('query', async (query) => {
@@ -122,6 +128,39 @@ likeSocket.on('connection', (socket) => {
     })
 })
 
+tagSocket.on('connection', (socket) => {
+    socket.on('findTag', async (tag) => {
+        const type = tag[0] === '#' ? '#' : '@';
+
+        try {
+            if (type === '#') {
+                const tags = await Tag.findAll({
+                    where: {
+                        tag: {
+                            [Op.startsWith]: tag.slice(1),
+                        }
+                    },
+                    limit: 6,
+                })
+    
+                socket.emit('tags', tags)
+            }
+
+            if (type === '@') {
+                const users = await User.getMatchingUsers(socket.user.username, tag.slice(1));
+
+                for (let i=0; i<users.length; i++) {
+                    users[i]['avatarPath'] = process.env.TEMPURL + users[i].avatarPath;
+                }
+
+                socket.emit('handles', users);
+            }
+        } catch (e) {
+            // do nothing
+        }
+    })
+})
+
 validationSocket.on('connection', (socket) => {
     socket.on('usernameValidation', async (username) => {
         const userCount = await User.count({
@@ -155,11 +194,13 @@ validationSocket.on('connection', (socket) => {
 const publicDirPath = path.join(__dirname, '../public')
 
 app.use(express.json())
-app.use(userRouter)
+app.use(express.static(publicDirPath))
+
+app.use(tagRouter)
 app.use(postRouter)
+app.use(userRouter)
 app.use(miscRouter)
 app.use(settingRouter)
-app.use(express.static(publicDirPath))
 
 app.get('/date', (req, res) => {
     const today = new Date()

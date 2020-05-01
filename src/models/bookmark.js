@@ -1,7 +1,7 @@
 const {Model, DataTypes, Op} = require('sequelize');
 const sequelize = require('../db');
 const Post = require('./post');
-const validator = require('validator');
+const {usernamePattern} = require('./../utils/regexPatterns')
 
 class Bookmark extends Model {
     /**
@@ -110,7 +110,7 @@ Bookmark.init({
         validate: {
             len: [1, 26],
             is: {
-                args: "^[a-zA-Z0-9_]+$",
+                args: usernamePattern,
                 msg: 'Invalid username'
             }
         }

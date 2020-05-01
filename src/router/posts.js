@@ -10,6 +10,7 @@ const { Op } = require("sequelize");
 const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
+const { hashTagPattern, handlePattern } = require('./../utils/regexPatterns')
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, "../../public/images/posts");
@@ -45,11 +46,10 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
      * 201 for success
      */
     try {
-        console.log(req.files.image);
-        console.log(req.body.info);
         post = JSON.parse(req.body.info); // post info
         post.username = req.user.username;
-        post["name"] = req.user.name;
+        post['tags'] = post['description'] === undefined ? [] : post['description'].match(hashTagPattern)
+        post['mentions'] = post['description'] === undefined ? [] : post['description'].match(handlePattern)
 
         const file = req.files;
         if (file.image !== undefined) {
@@ -81,20 +81,18 @@ router.get("/posts", auth, async (req, res) => {
         req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const posts = await Post.getUserFeed(req.user.username, skip, limit);
-        const bookmark = await Bookmark.getUserBookmarksIds(
+        const bookmarkRef = Bookmark.getUserBookmarksIds(
             posts.map((post) => post.postId),
             req.user.username
         );
-        const likes = await Like.getUserLikeIds(
+        const likesRef = Like.getUserLikeIds(
             posts.map((post) => post.postId),
             req.user.username
         );
-        const replies = await Post.userHomeFeedComments(
-            req.user.username,
-            posts.map((post) => post.postId),
-            skip,
-            limit
-        );
+
+        const parallelResp = await Promise.all([bookmarkRef, likesRef])
+        const bookmark = parallelResp[0];
+        const likes = parallelResp[1];
 
         const data = [];
 
@@ -121,7 +119,6 @@ router.get("/posts", auth, async (req, res) => {
             bookmarkIds: bookmark,
             maxDate: maxDate(posts),
             minDate: minDate(posts),
-            replies
         });
     } catch (e) {
         console.log(e);
@@ -172,39 +169,40 @@ router.get("/posts/:username", optionalAuth, async (req, res) => {
     }
 });
 
-router.get("/posts/:postId", async (req, res) => {
-    try {
-        const post = await Post.findOne({
-            where: {
-                postId: req.params.postId,
-            },
-            attributes: {
-                exclude: ["updatedAt"],
-            },
-            raw: true,
-        });
+// router.get("/posts/:username/:postId", async (req, res) => {
+//     try {
+//         const post = await Post.findOne({
+//             where: {
+//                 postId: req.params.postId,
+//                 username
+//             },
+//             attributes: {
+//                 exclude: ["updatedAt"],
+//             },
+//             raw: true,
+//         });
 
-        if (!post) {
-            throw new Error("No such post found");
-        }
+//         if (!post) {
+//             throw new Error("No such post found");
+//         }
 
-        if (post.replyTo !== null) {
-            const parent = await Post.findOne({
-                where: {
-                    postId: post.replyTo,
-                },
-                attributes: ["username"],
-                raw: true,
-            });
+//         if (post.replyTo !== null) {
+//             const parent = await Post.findOne({
+//                 where: {
+//                     postId: post.replyTo,
+//                 },
+//                 attributes: ["username"],
+//                 raw: true,
+//             });
 
-            post["parentUsername"] = parent.username;
-        }
+//             post["parentUsername"] = parent.username;
+//         }
 
-        res.send(post);
-    } catch (e) {
-        res.sendStatus(404);
-    }
-});
+//         res.send(post);
+//     } catch (e) {
+//         res.sendStatus(404);
+//     }
+// });
 
 //GET /posts/username/media?skip=0&limit=20
 router.get("/posts/:username/media", auth, async (req, res) => {
@@ -230,18 +228,13 @@ router.get("/posts/:username/media", auth, async (req, res) => {
             limit: limit,
         });
 
-        if (!media) {
-            throw new Error("Mentioned user has no media associated.");
-        }
-
         for (let i = 0; i < media.length; i++) {
             media[i].mediaPath = process.env.TEMPURL + media[i].mediaPath;
         }
 
-        res.send(media);
+        res.status(200).send(media);
     } catch (e) {
-        console.log(e);
-        res.status(404).send([]);
+        res.sendStatus(500);
     }
 });
 
@@ -256,17 +249,16 @@ router.get("/posts/:username/stars", auth, async (req, res) => {
         req.query.limit === undefined ? undefined : parseInt(req.query.limit);
     try {
         const likes = await Like.getUserLikes(req.params.username, skip, limit);
-        const ids = await Like.getUserLikeIds(
+        const idsRef = Like.getUserLikeIds(
             likes.map((i) => i.postId),
             req.user.username
         );
-        const bookIds = await Bookmark.getUserBookmarksIds(
+        const bookIdsRef = Bookmark.getUserBookmarksIds(
             likes.map((i) => i.postId),
             req.user.username
         );
-        if (!likes) {
-            throw new Error("Nothing found for user");
-        }
+
+        const [ids, bookIds] = await Promise.all([idsRef, bookIdsRef])
 
         for (let i = 0; i < likes.length; i++) {
             likes[i].mediaPath = process.env.TEMPURL + likes[i].mediaPath;
@@ -284,9 +276,10 @@ router.get("/posts/:username/stars", auth, async (req, res) => {
                 likes[i].bookmarked = false;
             }
         }
-        res.send(likes);
+        res.status(200).send(likes);
     } catch (e) {
-        res.status(404).send();
+        console.log(e)
+        res.status(500).send();
     }
 });
 
