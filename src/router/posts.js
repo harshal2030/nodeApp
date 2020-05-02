@@ -18,10 +18,10 @@ const commentImgPath = path.join(__dirname, "../../public/images/comments");
 
 const upload = multer({
     limits: {
-        fileSize: 20 * 1000000,
+        fileSize: 200 * 1000000,
     },
     fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|mp4)$/)) {
             return cb(Error("Unsupported files uploaded to the server"));
         }
 
@@ -32,7 +32,6 @@ const upload = multer({
 const mediaMiddleware = upload.fields([
     { name: "image", maxCount: 1 },
     { name: "video" },
-    { name: "commentMedia", maxCount: 1 },
 ]);
 
 router.post("/posts", auth, mediaMiddleware, async (req, res) => {
@@ -52,6 +51,7 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
         post['mentions'] = post['description'] === undefined ? [] : post['description'].match(handlePattern)
 
         const file = req.files;
+        console.log(file.video);
         if (file.image !== undefined) {
             console.log("if of imAGE");
             const filename = `${v4()}.png`;

@@ -234,6 +234,13 @@ Post.init({
         defaultValue: []
     }
 }, {
+    validate: {
+        checkEmptyPost() {
+            if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
+                throw new Error("Got an empty post");
+            }
+        }
+    },
     sequelize,
     timestamps: true,
     modelName: 'posts',
