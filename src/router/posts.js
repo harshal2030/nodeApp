@@ -11,10 +11,12 @@ const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
 const { hashTagPattern, handlePattern } = require('./../utils/regexPatterns')
+const fs = require('fs');
 
 const router = express.Router();
 const postImgPath = path.join(__dirname, "../../public/images/posts");
 const commentImgPath = path.join(__dirname, "../../public/images/comments");
+const videoPath = path.join(__dirname, '../../public/videos');
 
 const upload = multer({
     limits: {
@@ -32,6 +34,7 @@ const upload = multer({
 const mediaMiddleware = upload.fields([
     { name: "image", maxCount: 1 },
     { name: "video" },
+    { name: "commentMedia" }
 ]);
 
 router.post("/posts", auth, mediaMiddleware, async (req, res) => {
@@ -59,6 +62,15 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
             sharp(file.image[0].buffer).png().toFile(filePath);
             post["mediaPath"] = "/images/posts/" + filename;
             post["mediaIncluded"] = true;
+        }
+
+        if(file.video !== undefined) {
+            console.log("if of video");
+            const filename = `${v4()}.mp4`;
+            const filePath = videoPath + '/' + filename;
+            fs.writeFileSync(filePath, file.video[0].buffer, {encoding: 'ascii'});
+            post["mediaPath"] = "/videos/" + filename;
+            post['mediaIncluded'] = true;
         }
         await Post.create(post);
         res.status(201).send();
