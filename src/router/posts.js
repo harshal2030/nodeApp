@@ -10,13 +10,17 @@ const { Op } = require("sequelize");
 const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
-const { hashTagPattern, handlePattern } = require('./../utils/regexPatterns')
+const { hashTagPattern, handlePattern, videoMp4Pattern } = require('./../utils/regexPatterns')
 const fs = require('fs');
 
 const router = express.Router();
+
+const publicPath = path.join(__dirname, "../../public");
 const postImgPath = path.join(__dirname, "../../public/images/posts");
 const commentImgPath = path.join(__dirname, "../../public/images/comments");
 const videoPath = path.join(__dirname, '../../public/videos');
+
+const streamPath = path.join(__dirname, "../../streams");
 
 const upload = multer({
     limits: {
@@ -64,11 +68,11 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
             post["mediaIncluded"] = true;
         }
 
-        if(file.video !== undefined) {
+        if (file.video !== undefined) {
             console.log("if of video");
             const filename = `${v4()}.mp4`;
             const filePath = videoPath + '/' + filename;
-            fs.writeFileSync(filePath, file.video[0].buffer, {encoding: 'ascii'});
+            fs.writeFileSync(filePath, file.video[0].buffer, { encoding: 'ascii' });
             post["mediaPath"] = "/videos/" + filename;
             post['mediaIncluded'] = true;
         }
@@ -109,9 +113,15 @@ router.get("/posts", auth, async (req, res) => {
         const data = [];
 
         for (let i = 0; i < posts.length; i++) {
-            data.push(posts[i]);
             posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
             posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
+
+            if (videoMp4Pattern.test(posts[i].mediaPath)) {
+                posts[i]['video'] = true;
+            } else {
+                posts[i]['video'] = false;
+            }
+
             if (bookmark.includes(posts[i].postId)) {
                 posts[i]["bookmarked"] = true;
             } else {
@@ -123,6 +133,8 @@ router.get("/posts", auth, async (req, res) => {
             } else {
                 posts[i]["liked"] = false;
             }
+
+            data.push(posts[i]);
         }
 
         res.send({
@@ -137,6 +149,53 @@ router.get("/posts", auth, async (req, res) => {
         res.status(400).send(e);
     }
 });
+
+router.get('/posts/:postId/video', auth, async (req, res) => {
+    try {
+        const post = await Post.findOne({
+            where: {
+                postId: req.params.postId
+            },
+            attributes: ['mediaPath']
+        });
+
+        if (!videoMp4Pattern.test(post.mediaPath)) {
+            throw new Error('No video associated');
+        }
+
+        const path = publicPath + post.mediaPath;
+        const stat = fs.statSync(path);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+
+        if (range) {
+            const parts = range.replace(/bytes=/, "").split("-")
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+            const chunkSize = (end - start) + 1;
+            const file = fs.createReadStream(path, { start, end });
+
+            const head = {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': 'video/mp4',
+            }
+            res.writeHead(206, head);
+            file.pipe(res);
+        } else {
+            const head = {
+                'Content-Length': fileSize,
+                'Content-Type': 'video/mp4',
+            }
+            res.writeHead(200, head)
+            fs.createReadStream(path).pipe(res)
+        }
+    } catch (e) {
+        res.sendStatus(400)
+    }
+})
 
 // GET /posts/username?skip=0&limit=20
 router.get("/posts/:username", optionalAuth, async (req, res) => {
