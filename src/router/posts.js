@@ -10,17 +10,11 @@ const { Op } = require("sequelize");
 const Like = require("./../models/like");
 const Friend = require("./../models/friend");
 const { maxDate, minDate } = require("./../utils/dateFunctions");
-const { hashTagPattern, handlePattern, videoMp4Pattern } = require('./../utils/regexPatterns')
+const { hashTagPattern, handlePattern } = require('./../utils/regexPatterns')
 const fs = require('fs');
+const {postImgPath, videoPath, commentImgPath} = require('./../utils/paths')
 
 const router = express.Router();
-
-const publicPath = path.join(__dirname, "../../public");
-const postImgPath = path.join(__dirname, "../../public/images/posts");
-const commentImgPath = path.join(__dirname, "../../public/images/comments");
-const videoPath = path.join(__dirname, '../../public/videos');
-
-const streamPath = path.join(__dirname, "../../streams");
 
 const upload = multer({
     limits: {
@@ -61,9 +55,9 @@ router.post("/posts", auth, mediaMiddleware, async (req, res) => {
         console.log(file.video);
         if (file.image !== undefined) {
             console.log("if of imAGE");
-            const filename = `${v4()}.png`;
+            const filename = `${v4()}.webp`;
             const filePath = postImgPath + "/" + filename;
-            sharp(file.image[0].buffer).png().toFile(filePath);
+            sharp(file.image[0].buffer).webp({lossless: true}).toFile(filePath);
             post["mediaPath"] = "/images/posts/" + filename;
             post["mediaIncluded"] = true;
         }
@@ -110,32 +104,7 @@ router.get("/posts", auth, async (req, res) => {
         const bookmark = parallelResp[0];
         const likes = parallelResp[1];
 
-        const data = [];
-
-        for (let i = 0; i < posts.length; i++) {
-            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
-            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
-
-            if (videoMp4Pattern.test(posts[i].mediaPath)) {
-                posts[i]['video'] = true;
-            } else {
-                posts[i]['video'] = false;
-            }
-
-            if (bookmark.includes(posts[i].postId)) {
-                posts[i]["bookmarked"] = true;
-            } else {
-                posts[i]["bookmarked"] = false;
-            }
-
-            if (likes.includes(posts[i].postId)) {
-                posts[i]["liked"] = true;
-            } else {
-                posts[i]["liked"] = false;
-            }
-
-            data.push(posts[i]);
-        }
+        const data = Post.addUserInfo(posts, bookmark, likes);
 
         res.send({
             data,
@@ -149,53 +118,6 @@ router.get("/posts", auth, async (req, res) => {
         res.status(400).send(e);
     }
 });
-
-router.get('/posts/:postId/video', auth, async (req, res) => {
-    try {
-        const post = await Post.findOne({
-            where: {
-                postId: req.params.postId
-            },
-            attributes: ['mediaPath']
-        });
-
-        if (!videoMp4Pattern.test(post.mediaPath)) {
-            throw new Error('No video associated');
-        }
-
-        const path = publicPath + post.mediaPath;
-        const stat = fs.statSync(path);
-        const fileSize = stat.size;
-        const range = req.headers.range;
-
-        if (range) {
-            const parts = range.replace(/bytes=/, "").split("-")
-            const start = parseInt(parts[0], 10);
-            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-            const chunkSize = (end - start) + 1;
-            const file = fs.createReadStream(path, { start, end });
-
-            const head = {
-                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-                'Accept-Ranges': 'bytes',
-                'Content-Length': chunkSize,
-                'Content-Type': 'video/mp4',
-            }
-            res.writeHead(206, head);
-            file.pipe(res);
-        } else {
-            const head = {
-                'Content-Length': fileSize,
-                'Content-Type': 'video/mp4',
-            }
-            res.writeHead(200, head)
-            fs.createReadStream(path).pipe(res)
-        }
-    } catch (e) {
-        res.sendStatus(400)
-    }
-})
 
 // GET /posts/username?skip=0&limit=20
 router.get("/posts/:username", optionalAuth, async (req, res) => {
@@ -211,32 +133,23 @@ router.get("/posts/:username", optionalAuth, async (req, res) => {
         const username = req.params.username;
         const posts = await Post.getUserPosts(username, skip, limit);
         if (req.user !== undefined) {
-            likes = await Like.getUserLikeIds(
+            const likesRef = Like.getUserLikeIds(
                 posts.map((post) => post.postId),
                 req.user.username
             );
-        }
 
-        if (!posts) {
-            return res.status(404).send("No Posts yet");
-        }
-        for (let i = 0; i < posts.length; i++) {
-            posts[i].mediaPath = process.env.TEMPURL + posts[i].mediaPath;
-            posts[i].avatarPath = process.env.TEMPURL + posts[i].avatarPath;
+            const bookRef = Bookmark.getUserBookmarksIds(posts.map((post) => post.postId), req.user.username);
 
-            if (req.user !== undefined) {
-                if (likes.includes(posts[i].postId)) {
-                    posts[i]["liked"] = true;
-                } else {
-                    posts[i]["liked"] = false;
-                }
-            }
+            const parallelResp = await Promise.all([bookRef, likesRef]);
+
+            const authPosts = Post.addUserInfo(posts, parallelResp[0], parallelResp[1]);
+            return res.send(authPosts);
         }
 
         res.send(posts);
     } catch (e) {
         console.log(e);
-        res.status(500).send(e);
+        res.status(400).send(e);
     }
 });
 
@@ -331,23 +244,8 @@ router.get("/posts/:username/stars", auth, async (req, res) => {
 
         const [ids, bookIds] = await Promise.all([idsRef, bookIdsRef])
 
-        for (let i = 0; i < likes.length; i++) {
-            likes[i].mediaPath = process.env.TEMPURL + likes[i].mediaPath;
-            likes[i].avatarPath = process.env.TEMPURL + likes[i].avatarPath;
-
-            if (ids.includes(likes[i].postId)) {
-                likes[i].liked = true;
-            } else {
-                likes[i].liked = false;
-            }
-
-            if (bookIds.includes(likes[i].postId)) {
-                likes[i].bookmarked = true;
-            } else {
-                likes[i].bookmarked = false;
-            }
-        }
-        res.status(200).send(likes);
+        const data = Post.addUserInfo(likes, bookIds, ids)
+        res.send(data);
     } catch (e) {
         console.log(e)
         res.status(500).send();

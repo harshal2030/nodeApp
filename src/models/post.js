@@ -3,6 +3,7 @@ const sequelize = require('../db')
 const Like = require('./like')
 const {usernamePattern} = require('./../utils/regexPatterns')
 const Tag = require('./tag');
+const {videoMp4Pattern} = require('./../utils/regexPatterns')
 
 /**
  * Initiates the Post model for the app
@@ -155,6 +156,51 @@ class Post extends Model {
         })
 
         return result[0];
+    }
+
+    /**
+     * Alter array of posts and add additional info such as liked, bookmarked, video etc.
+     * 
+     * @param {Array} posts Array of objects containing post Data
+     * @param {Array} bookmarkIds Array of bookmark ids
+     * @param {Array} likeIds Array of like ids
+     * 
+     * @returns {Array} altered array with additional info
+     */
+    static addUserInfo(posts, bookmarkIds, likeIds) {
+        const data = [];
+        const ref = posts;
+
+        if (posts.length < bookmarkIds.length || posts.length < likeIds.length) {
+            throw new Error('Invalid data');
+        }
+
+        for (let i=0; i<ref.length; i++) {
+            ref[i].mediaPath = process.env.TEMPURL + ref[i].mediaPath;
+            ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
+
+            if (videoMp4Pattern.test(ref[i].mediaPath)) {
+                ref[i]['video'] = true;
+            } else {
+                ref[i]['video'] = false;
+            }
+
+            if (bookmarkIds.includes(ref[i].postId)) {
+                ref[i]["bookmarked"] = true;
+            } else {
+                ref[i]["bookmarked"] = false;
+            }
+
+            if (likeIds.includes(ref[i].postId)) {
+                ref[i]["liked"] = true;
+            } else {
+                ref[i]["liked"] = false;
+            }
+
+            data.push(ref[i]);
+        }
+
+        return data;
     }
 }
 

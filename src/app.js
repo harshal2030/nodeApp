@@ -1,20 +1,28 @@
 const express = require('express');
+
+// routers
 const userRouter = require('./router/user')
 const postRouter = require('./router/posts')
 const miscRouter = require('./router/misc')
 const settingRouter = require('./router/settings')
+const multimediaRouter = require('./router/multimedia')
+const tagRouter = require('./router/tags');
+
 const path = require('path')
 const http = require('http')
 const socketio = require('socket.io');
+
 const sequelize = require('./db');
+const {Op} = require('sequelize');
+
+// Database models
 const Like = require('./models/like');
 const Post = require('./models/post');
 const User = require('./models/user');
 const Friend = require('./models/friend');
-const auth = require('./middlewares/socketAuth');
-const {Op} = require('sequelize');
-const tagRouter = require('./router/tags');
 const Tag = require('./models/tag');
+
+const auth = require('./middlewares/socketAuth');
 
 const app = express();
 const server = http.createServer(app);
@@ -201,6 +209,7 @@ app.use(postRouter)
 app.use(userRouter)
 app.use(miscRouter)
 app.use(settingRouter)
+app.use(multimediaRouter)
 
 app.get('/date', (req, res) => {
     const today = new Date()
