@@ -2,6 +2,8 @@ const express = require('express');
 const Post = require('./../models/post');
 const {auth} = require('./../middlewares/auth');
 const {publicPath} = require('./../utils/paths');
+const sharp = require('sharp');
+const fs = require('fs');
 
 const router = express.Router();
 
