@@ -1,8 +1,14 @@
 const path = require('path');
 
+// public paths
 const publicPath = path.join(__dirname, "../../public");
-const postImgPath = path.join(__dirname, "../../public/images/posts");
-const commentImgPath = path.join(__dirname, "../../public/images/comments");
-const videoPath = path.join(__dirname, '../../public/videos');
+const avatarPath = path.join(__dirname, '../../public/images/avatar');
+const headerPath = path.join(__dirname, '../../public/images/header');
 
-module.exports = {publicPath, postImgPath, commentImgPath, videoPath};
+// media paths
+const postImgPath = path.join(__dirname, "../../media/images/posts");
+const commentImgPath = path.join(__dirname, "../../media/images/comments");
+const videoPath = path.join(__dirname, '../../media/videos');
+const mediaPath = path.join(__dirname, './../../media')
+
+module.exports = {publicPath, postImgPath, commentImgPath, videoPath, avatarPath, headerPath, mediaPath};

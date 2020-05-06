@@ -1,58 +1,61 @@
+/* eslint-disable new-cap */
+/* eslint-disable max-len */
+/* eslint-disable no-tabs */
 const {Model, DataTypes, QueryTypes} = require('sequelize');
-const sequelize = require('../db')
-const Like = require('./like')
-const {usernamePattern} = require('./../utils/regexPatterns')
+const sequelize = require('../db');
+const Like = require('./like');
+const {usernamePattern} = require('./../utils/regexPatterns');
 const Tag = require('./tag');
-const {videoMp4Pattern} = require('./../utils/regexPatterns')
+const {videoMp4Pattern} = require('./../utils/regexPatterns');
 
 /**
  * Initiates the Post model for the app
- * @class Post 
+ * @class Post
  */
 class Post extends Model {
-    /**
+  /**
     * Updates like table.
     * Increment the likes in post table
     * @param {String} postId uuidv4 of the post
     * @param {String} likedBy user who liked
     * @param {String} postedBy user who posted it
-    * @returns {number} number of likes  
+    * @return {number} number of likes
     */
-    static async like(postId, likedBy, postedBy) {
-        await Like.create({postId, likedBy, postedBy});
-        Post.increment({likes: 1}, {where: {postId}});
+  static async like(postId, likedBy, postedBy) {
+    await Like.create({postId, likedBy, postedBy});
+    Post.increment({likes: 1}, {where: {postId}});
 
-        return await Like.count({where: {postId}})
-    }
+    return await Like.count({where: {postId}});
+  }
 
-    /**
+  /**
      * Updates the comment table
      * Increment the comments in post table
-     * 
+     *
      * @param {Object} commentBody body of the comment
-     * @returns {number} number of comments
+     * @return {number} number of comments
      */
-    static async comment(commentBody) {
-        const {type, replyTo} = commentBody;
-        if (type !== 'reply' || replyTo === '') {
-            throw new Error('Not a valid type comment')
-        }
-        await Post.create(commentBody);
-        Post.increment({comments: 1}, {where: {postId: replyTo}});
-
-        return await Post.count({where: {replyTo: replyTo}})
+  static async comment(commentBody) {
+    const {type, replyTo} = commentBody;
+    if (type !== 'reply' || replyTo === '') {
+      throw new Error('Not a valid type comment');
     }
+    await Post.create(commentBody);
+    Post.increment({comments: 1}, {where: {postId: replyTo}});
 
-    /**
+    return await Post.count({where: {replyTo: replyTo}});
+  }
+
+  /**
     * Get the feed for a user.
-    * @param {String} username username of the user 
+    * @param {String} username username of the user
     * @param {number} [skip] skips after end reached in frontend
     * @param {number} [limit] no. of post to be returned on each call
-    * 
-    * @returns {Array} array of posts for user feed
+    *
+    * @return {Array} array of posts for user feed
     */
-    static async getUserFeed(username, skip = 0, limit = 20) {
-        const query = `WITH cte_posts AS (
+  static async getUserFeed(username, skip = 0, limit = 20) {
+    const query = `WITH cte_posts AS (
             SELECT posts."id", posts."postId", posts."username", posts."title",
 			posts."description", posts."mediaIncluded", posts."mediaPath",
 			posts."likes", posts."comments", posts."createdAt"
@@ -72,24 +75,24 @@ class Post extends Model {
         INNER JOIN cte_posts ON
         cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
 
-        const result = await sequelize.query(query, {
-            replacements: {username, skip, limit},
-            raw: QueryTypes.SELECT
-        })
+    const result = await sequelize.query(query, {
+      replacements: {username, skip, limit},
+      raw: QueryTypes.SELECT,
+    });
 
-        return result[0];
-    }
+    return result[0];
+  }
 
-    /**
+  /**
      * Get the array of replies recieved in posts.
      * @param {String} username username of the requester
      * @param {Array} postIds ids of the post, need to be excluded
-     * @param {number} [skip] 
+     * @param {number} [skip]
      * @param {number} [limit]
-     * @returns {Array} array of post replies 
+     * @return {Array} array of post replies
      */
-    static async userHomeFeedComments(username, postIds, skip = 0, limit= 20) {
-        const query = `with cte_replies AS (
+  static async userHomeFeedComments(username, postIds, skip = 0, limit= 20) {
+    const query = `with cte_replies AS (
             SELECT posts.* FROM posts INNER JOIN friends ON 
             friends."followed_username" = posts."username"
             WHERE posts."type" = 'reply' AND friends."username"=:username
@@ -99,25 +102,25 @@ class Post extends Model {
         SELECT users."avatarPath", users."name", cte_replies.* FROM users INNER JOIN
         cte_replies ON cte_replies."username" = users."username"`;
 
-        const result = await sequelize.query(query, {
-            replacements: {username, postIds, skip, limit},
-            raw: true,
-        });
+    const result = await sequelize.query(query, {
+      replacements: {username, postIds, skip, limit},
+      raw: true,
+    });
 
-        return result[0];
-    }
+    return result[0];
+  }
 
-    /**
-     * Get posts of a user 
-     * 
+  /**
+     * Get posts of a user
+     *
      * @param {String} username username of user
      * @param {number} [skip] skips after end is reached
      * @param {number} [limit] no. of posts to returned on each call
-     * 
-     * @returns {Array} array of posts of auser 
+     *
+     * @return {Array} array of posts of auser
      */
-    static async getUserPosts(username, skip=0, limit=10) {
-        const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
+  static async getUserPosts(username, skip=0, limit=10) {
+    const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
             posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments", posts."createdAt" FROM posts
             INNER JOIN users ON
@@ -125,191 +128,186 @@ class Post extends Model {
             posts."type"= 'post' AND posts."username"=:username 
             ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
 
-        const result = await sequelize.query(query, {
-            replacements: {username, skip, limit},
-            raw: true,
-        })
+    const result = await sequelize.query(query, {
+      replacements: {username, skip, limit},
+      raw: true,
+    });
 
-        return result[0];
-    }
+    return result[0];
+  }
 
-    /**
+  /**
      * Get array of comments based on postId
-     * 
+     *
      * @param {String} postId id of post whose comments are to be fetched
      * @param {number} [skip] skips after end is reached
      * @param {number} [limit] no. of comments to be returned on each call
-     * 
-     * @returns {Array} array of comments
+     *
+     * @return {Array} array of comments
      */
-    static async getComments(postId, skip = 0, limit = 10) {
-        const query = `SELECT posts."postId", posts."username", posts."title",
+  static async getComments(postId, skip = 0, limit = 10) {
+    const query = `SELECT posts."postId", posts."username", posts."title",
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments",
             posts."createdAt", users."name", users."avatarPath" FROM posts INNER JOIN users ON
             users."username" = posts."username"
             WHERE posts."replyTo"=:postId OFFSET :skip LIMIT :limit`;
 
-        const result = await sequelize.query(query, {
-            replacements: {postId, skip, limit},
-            raw: true,
-        })
+    const result = await sequelize.query(query, {
+      replacements: {postId, skip, limit},
+      raw: true,
+    });
 
-        return result[0];
-    }
+    return result[0];
+  }
 
-    /**
+  /**
      * Alter array of posts and add additional info such as liked, bookmarked, video etc.
-     * 
+     *
      * @param {Array} posts Array of objects containing post Data
      * @param {Array} bookmarkIds Array of bookmark ids
      * @param {Array} likeIds Array of like ids
-     * 
-     * @returns {Array} altered array with additional info
+     *
+     * @return {Array} altered array with additional info
      */
-    static addUserInfo(posts, bookmarkIds, likeIds) {
-        const data = [];
-        const ref = posts;
+  static addUserInfo(posts, bookmarkIds, likeIds) {
+    const data = [];
+    const ref = posts;
 
-        if (posts.length < bookmarkIds.length || posts.length < likeIds.length) {
-            throw new Error('Invalid data');
-        }
-
-        for (let i=0; i<ref.length; i++) {
-            ref[i].mediaPath = process.env.TEMPURL + ref[i].mediaPath;
-            ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
-
-            if (videoMp4Pattern.test(ref[i].mediaPath)) {
-                ref[i]['video'] = true;
-            } else {
-                ref[i]['video'] = false;
-            }
-
-            if (bookmarkIds.includes(ref[i].postId)) {
-                ref[i]["bookmarked"] = true;
-            } else {
-                ref[i]["bookmarked"] = false;
-            }
-
-            if (likeIds.includes(ref[i].postId)) {
-                ref[i]["liked"] = true;
-            } else {
-                ref[i]["liked"] = false;
-            }
-
-            data.push(ref[i]);
-        }
-
-        return data;
+    if (posts.length < bookmarkIds.length || posts.length < likeIds.length) {
+      throw new Error('Invalid data');
     }
+
+    for (let i=0; i<ref.length; i++) {
+      ref[i].mediaPath = process.env.TEMPURL + ref[i].mediaPath;
+      ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
+
+      if (videoMp4Pattern.test(ref[i].mediaPath)) {
+        ref[i]['video'] = true;
+      } else {
+        ref[i]['video'] = false;
+      }
+
+      if (bookmarkIds.includes(ref[i].postId)) {
+        ref[i]['bookmarked'] = true;
+      } else {
+        ref[i]['bookmarked'] = false;
+      }
+
+      if (likeIds.includes(ref[i].postId)) {
+        ref[i]['liked'] = true;
+      } else {
+        ref[i]['liked'] = false;
+      }
+
+      data.push(ref[i]);
+    }
+
+    return data;
+  }
 }
 
 Post.init({
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-    },
-    postId: {
-        type: DataTypes.STRING,
-        primaryKey: true,
-        defaultValue: DataTypes.UUIDV4,
-        allowNull: false,
-    },
-    username: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            len: [1, 26],
-            is: {
-                args: usernamePattern,
-                msg: 'Invalid username'
-            }
-        }
-    },
-    type: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'post',
-    },
-    sharable: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
-    },
-    title: {
-        type: DataTypes.STRING(60),
-        allowNull: true,
-        defaultValue: '',
-        validate: {
-            min: 1,
-        }
-    },
-    replyTo: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    description: {
-        type: DataTypes.STRING(2048),
-        allowNull: true,
-        defaultValue: '',
-        validate: {
-            min: 1
-        }
-    },
-    mediaIncluded: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
-    mediaPath: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    likes: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-    },
-    comments: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-    },
-    tags: {
-        type: DataTypes.ARRAY(DataTypes.STRING(150)),
-        defaultValue: []
-    },
-    mentions: {
-        type: DataTypes.ARRAY(DataTypes.STRING(30)),
-        defaultValue: []
-    }
-}, {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+  },
+  postId: {
+    type: DataTypes.STRING,
+    primaryKey: true,
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
     validate: {
-        checkEmptyPost() {
-            if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
-                throw new Error("Got an empty post");
-            }
-        }
+      len: [1, 26],
+      is: {
+        args: usernamePattern,
+        msg: 'Invalid username',
+      },
     },
-    sequelize,
-    timestamps: true,
-    modelName: 'posts',
-    freezeTableName: true,
-    hooks: {
-        afterCreate: async (post, options) => {
-            try {
-                const tags = post['tags'];
-                if (tags.length !== 0) {
-                    tags.forEach(tag => {
-                        Tag.createUpdateTag(tag)
-                    })
-                }
-            } catch (e) {
-                // do nothing
-            }
+  },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'post',
+  },
+  sharable: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  title: {
+    type: DataTypes.STRING(60),
+    allowNull: true,
+    defaultValue: '',
+    validate: {
+      min: 1,
+    },
+  },
+  replyTo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  description: {
+    type: DataTypes.STRING(2048),
+    allowNull: true,
+    defaultValue: '',
+    validate: {
+      min: 1,
+    },
+  },
+  mediaIncluded: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  mediaPath: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  likes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  comments: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  tags: {
+    type: DataTypes.ARRAY(DataTypes.STRING(150)),
+    defaultValue: [],
+  },
+  mentions: {
+    type: DataTypes.ARRAY(DataTypes.STRING(30)),
+    defaultValue: [],
+  },
+}, {
+  validate: {
+    checkEmptyPost() {
+      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
+        throw new Error('Got an empty post');
+      }
+    },
+  },
+  sequelize,
+  timestamps: true,
+  modelName: 'posts',
+  freezeTableName: true,
+  hooks: {
+    afterCreate: async (post, options) => {
+      try {
+        const tags = post['tags'];
+        if (tags.length !== 0) {
+          tags.forEach((tag) => {
+            Tag.createUpdateTag(tag);
+          });
         }
-    }
-})
-
-const func = async () => {
-    Post.sync({alter: true})
-}
-//func()
+      } catch (e) {
+        // do nothing
+      }
+    },
+  },
+});
 
 module.exports = Post;
