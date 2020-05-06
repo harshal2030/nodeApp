@@ -3,10 +3,9 @@ const sharp = require('sharp');
 const fs = require('fs');
 
 const Post = require('./../models/post');
-const User = require('./../models/user');
-const {auth} = require('./../middlewares/auth');
-const {mediaPath} = require('./../utils/paths');
-const {videoMp4Pattern} = require('./../utils/regexPatterns');
+const { auth } = require('./../middlewares/auth');
+const { mediaPath } = require('./../utils/paths');
+const { videoMp4Pattern } = require('./../utils/regexPatterns');
 const sequelize = require('./../db');
 
 const router = express.Router();
@@ -14,17 +13,17 @@ const router = express.Router();
 router.get('/media/posts/:postId/images', auth, async (req, res) => {
   try {
     const post = await sequelize.query(
-        `SELECT posts."mediaPath", users."private" FROM posts INNER JOIN users ON users."username" = posts."username" WHERE posts."postId" = :postId`,
-        {
-          replacements: {postId: req.params.postId},
-          raw: true,
-        },
+      `SELECT posts."mediaPath", users."private" FROM posts INNER JOIN users ON users."username" = posts."username" WHERE posts."postId" = :postId`,
+      {
+        replacements: { postId: req.params.postId },
+        raw: true,
+      },
     );
 
     const imagePath = mediaPath + post.mediaPath;
-    const image = await sharp(imagePath).webp({lossless: false}).toBuffer();
+    const image = await sharp(imagePath).webp({ lossless: false }).toBuffer();
 
-    res.set({'Content-Type': 'image/webp'}).send(image);
+    res.set({ 'Content-Type': 'image/webp' }).send(image);
   } catch (e) {
     console.log(e);
     res.sendStatus(400);
@@ -55,7 +54,7 @@ router.get('/media/posts/:postId/video', auth, async (req, res) => {
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
 
       const chunkSize = end - start + 1;
-      const file = fs.createReadStream(path, {start, end});
+      const file = fs.createReadStream(path, { start, end });
 
       const head = {
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,
