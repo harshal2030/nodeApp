@@ -228,10 +228,14 @@ User.init({
 })
 
 const func = async () => {
-    // await sequelize.sync()
-    await User.sync({alter: true})
+    try {
+        await sequelize.sync({force: true})
+    } catch (e) {
+        console.log(e)
+    } 
+    // await User.sync({alter: true})
 }
 
-//func()
+// func()
 
 module.exports = User
