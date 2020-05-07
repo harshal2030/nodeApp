@@ -80,14 +80,7 @@ class Bookmark extends Model {
     });
 
     if (bookmarks === 0) {
-      const postDate = await Post.findOne({
-        where: {
-          postId,
-        },
-        attributes: ['createdAt'],
-        raw: true,
-      });
-      Bookmark.create({postId, username, postDate: postDate.createdAt});
+      Bookmark.create({postId, username});
     } else {
       Bookmark.destroy({
         where: {

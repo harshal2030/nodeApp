@@ -18,11 +18,10 @@ class Post extends Model {
     * Increment the likes in post table
     * @param {String} postId uuidv4 of the post
     * @param {String} likedBy user who liked
-    * @param {String} postedBy user who posted it
     * @return {number} number of likes
     */
-  static async like(postId, likedBy, postedBy) {
-    await Like.create({postId, likedBy, postedBy});
+  static async like(postId, likedBy ) {
+    await Like.create({postId, likedBy });
     Post.increment({likes: 1}, {where: {postId}});
 
     return await Like.count({where: {postId}});

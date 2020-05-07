@@ -112,21 +112,20 @@ likeSocket.on('connection', (socket) => {
             const isPresent = await Like.findOne({where:{
                 postId: data.postId,
                 likedBy: socket.user.username,
-                postedBy: data.postedBy
             }})
 
             if (isPresent) {
                 throw 'Present'
             }
 
-            const likes = await Post.like(data.postId, socket.user.username, data.postedBy);
+            const likes = await Post.like(data.postId, socket.user.username);
             likeSocket.emit('likeUpdate', {postId: data.postId, update: likes});
         } catch (e) {
+            console.log(e);
             if (e === 'Present') {
                 await Like.destroy({where: {
                     postId: data.postId,
                     likedBy: socket.user.username,
-                    postedBy: data.postedBy,
                 }})
                 Post.increment({likes: -1}, {where: {postId: data.postId}})
             }

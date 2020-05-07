@@ -10,9 +10,12 @@ const sequelize = require('./../db');
 
 const router = express.Router();
 
+// Get /media/posts/:id/images?lossless=false
 router.get('/media/posts/:postId/images', auth, async (req, res) => {
+
+  const loseless = req.query.loseless === undefined ? false : true;
   try {
-    const post = await sequelize.query(
+    const postR = await sequelize.query(
       `SELECT posts."mediaPath", users."private" FROM posts INNER JOIN users ON users."username" = posts."username" WHERE posts."postId" = :postId`,
       {
         replacements: { postId: req.params.postId },
@@ -20,8 +23,18 @@ router.get('/media/posts/:postId/images', auth, async (req, res) => {
       },
     );
 
+    const post = postR[0][0];
+    if (post.mediaPath === undefined) {
+      throw new Error('No image in this post')
+    }
+
+    if (post.private === true && req.user === undefined) {
+      return res.status(403).send({error: 'Need to login to view'});
+    }
+
     const imagePath = mediaPath + post.mediaPath;
-    const image = await sharp(imagePath).webp({ lossless: false }).toBuffer();
+
+    const image = await sharp(imagePath).webp({ lossless: loseless }).toBuffer();
 
     res.set({ 'Content-Type': 'image/webp' }).send(image);
   } catch (e) {

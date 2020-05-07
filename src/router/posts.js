@@ -48,8 +48,8 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
   try {
     post = JSON.parse(req.body.info); // post info
     post.username = req.user.username;
-    post['tags'] = post['description'] === undefined ? [] : post['description'].match(hashTagPattern);
-    post['mentions'] = post['description'] === undefined ? [] : post['description'].match(handlePattern);
+    post['tags'] = post['description'].match(hashTagPattern) === null ? [] : post['description'].match(hashTagPattern);
+    post['mentions'] = post['description'].match(handlePattern) === null ? [] : post['description'].match(handlePattern);
 
     const file = req.files;
     if (file.image !== undefined) {
