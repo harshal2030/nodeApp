@@ -1,22 +1,24 @@
+/* eslint-disable consistent-return */
 const express = require('express');
 const sharp = require('sharp');
 const fs = require('fs');
 
-const Post = require('./../models/post');
-const { auth } = require('./../middlewares/auth');
-const { mediaPath } = require('./../utils/paths');
-const { videoMp4Pattern } = require('./../utils/regexPatterns');
-const sequelize = require('./../db');
+const Friend = require('../models/friend');
+const { optionalAuth } = require('../middlewares/auth');
+const { mediaPath } = require('../utils/paths');
+const { videoMp4Pattern } = require('../utils/regexPatterns');
+const sequelize = require('../db');
 
 const router = express.Router();
 
 // Get /media/posts/:id/images?lossless=false
-router.get('/media/posts/:postId/images', auth, async (req, res) => {
-
-  const loseless = req.query.loseless === undefined ? false : true;
+router.get('/media/posts/:postId/images', optionalAuth, async (req, res) => {
+  const loseless = req.query.loseless !== undefined;
   try {
     const postR = await sequelize.query(
-      `SELECT posts."mediaPath", users."private" FROM posts INNER JOIN users ON users."username" = posts."username" WHERE posts."postId" = :postId`,
+      `SELECT posts."mediaPath", posts."username", 
+      users."private" FROM posts INNER JOIN users ON 
+      users."username" = posts."username" WHERE posts."postId" = :postId`,
       {
         replacements: { postId: req.params.postId },
         raw: true,
@@ -25,11 +27,25 @@ router.get('/media/posts/:postId/images', auth, async (req, res) => {
 
     const post = postR[0][0];
     if (post.mediaPath === undefined) {
-      throw new Error('No image in this post')
+      throw new Error('No image in this post');
     }
 
-    if (post.private === true && req.user === undefined) {
-      return res.status(403).send({error: 'Need to login to view'});
+    if (post.private === true) {
+      if (req.user === undefined) {
+        return res.status(403).send({ error: 'Login to view post' });
+      }
+
+      const allowed = await Friend.findOne({
+        where: {
+          username: req.user.username,
+          followed_username: post.username,
+        },
+        raw: true,
+      });
+
+      if (!allowed) {
+        return res.status(401).send({ error: 'You need to follow the user to view' });
+      }
     }
 
     const imagePath = mediaPath + post.mediaPath;
@@ -38,28 +54,50 @@ router.get('/media/posts/:postId/images', auth, async (req, res) => {
 
     res.set({ 'Content-Type': 'image/webp' }).send(image);
   } catch (e) {
-    console.log(e);
     res.sendStatus(400);
   }
 });
 
-router.get('/media/posts/:postId/video', auth, async (req, res) => {
+router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
   try {
-    const post = await Post.findOne({
-      where: {
-        postId: req.params.postId,
+    const postR = await sequelize.query(
+      `SELECT posts."mediaPath", posts."username", 
+      users."private" FROM posts INNER JOIN users ON 
+      users."username" = posts."username" WHERE posts."postId" = :postId`,
+      {
+        replacements: { postId: req.params.postId },
+        raw: true,
       },
-      attributes: ['mediaPath'],
-    });
+    );
+
+    const post = postR[0][0];
 
     if (!videoMp4Pattern.test(post.mediaPath)) {
       throw new Error('No video associated');
     }
 
+    if (post.private === true) {
+      if (req.user === undefined) {
+        return res.status(403).send({ error: 'Login to view post' });
+      }
+
+      const allowed = await Friend.findOne({
+        where: {
+          username: req.user.username,
+          followed_username: post.username,
+        },
+        raw: true,
+      });
+
+      if (!allowed) {
+        return res.status(401).send({ error: 'You need to follow the user to view' });
+      }
+    }
+
     const path = mediaPath + post.mediaPath;
     const stat = fs.statSync(path);
     const fileSize = stat.size;
-    const range = req.headers.range;
+    const { range } = req.headers;
 
     if (range) {
       const parts = range.replace(/bytes=/, '').split('-');

@@ -1,12 +1,14 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-return-await */
 /* eslint-disable new-cap */
 /* eslint-disable max-len */
 /* eslint-disable no-tabs */
-const {Model, DataTypes, QueryTypes} = require('sequelize');
+const { Model, DataTypes, QueryTypes } = require('sequelize');
 const sequelize = require('../db');
 const Like = require('./like');
-const {usernamePattern} = require('./../utils/regexPatterns');
+const { usernamePattern } = require('../utils/regexPatterns');
 const Tag = require('./tag');
-const {videoMp4Pattern} = require('./../utils/regexPatterns');
+const { videoMp4Pattern } = require('../utils/regexPatterns');
 
 /**
  * Initiates the Post model for the app
@@ -20,11 +22,11 @@ class Post extends Model {
     * @param {String} likedBy user who liked
     * @return {number} number of likes
     */
-  static async like(postId, likedBy ) {
-    await Like.create({postId, likedBy });
-    Post.increment({likes: 1}, {where: {postId}});
+  static async like(postId, likedBy) {
+    await Like.create({ postId, likedBy });
+    Post.increment({ likes: 1 }, { where: { postId } });
 
-    return await Like.count({where: {postId}});
+    return await Like.count({ where: { postId } });
   }
 
   /**
@@ -35,14 +37,14 @@ class Post extends Model {
      * @return {number} number of comments
      */
   static async comment(commentBody) {
-    const {type, replyTo} = commentBody;
+    const { type, replyTo } = commentBody;
     if (type !== 'reply' || replyTo === '') {
       throw new Error('Not a valid type comment');
     }
     await Post.create(commentBody);
-    Post.increment({comments: 1}, {where: {postId: replyTo}});
+    Post.increment({ comments: 1 }, { where: { postId: replyTo } });
 
-    return await Post.count({where: {replyTo: replyTo}});
+    return await Post.count({ where: { replyTo } });
   }
 
   /**
@@ -75,7 +77,7 @@ class Post extends Model {
         cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, skip, limit},
+      replacements: { username, skip, limit },
       raw: QueryTypes.SELECT,
     });
 
@@ -90,7 +92,7 @@ class Post extends Model {
      * @param {number} [limit]
      * @return {Array} array of post replies
      */
-  static async userHomeFeedComments(username, postIds, skip = 0, limit= 20) {
+  static async userHomeFeedComments(username, postIds, skip = 0, limit = 20) {
     const query = `with cte_replies AS (
             SELECT posts.* FROM posts INNER JOIN friends ON 
             friends."followed_username" = posts."username"
@@ -102,7 +104,9 @@ class Post extends Model {
         cte_replies ON cte_replies."username" = users."username"`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, postIds, skip, limit},
+      replacements: {
+        username, postIds, skip, limit,
+      },
       raw: true,
     });
 
@@ -118,7 +122,7 @@ class Post extends Model {
      *
      * @return {Array} array of posts of auser
      */
-  static async getUserPosts(username, skip=0, limit=10) {
+  static async getUserPosts(username, skip = 0, limit = 10) {
     const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
             posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments", posts."createdAt" FROM posts
@@ -128,7 +132,7 @@ class Post extends Model {
             ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, skip, limit},
+      replacements: { username, skip, limit },
       raw: true,
     });
 
@@ -153,7 +157,7 @@ class Post extends Model {
             WHERE posts."replyTo"=:postId OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {
-      replacements: {postId, skip, limit},
+      replacements: { postId, skip, limit },
       raw: true,
     });
 
@@ -177,26 +181,26 @@ class Post extends Model {
       throw new Error('Invalid data');
     }
 
-    for (let i=0; i<ref.length; i++) {
+    for (let i = 0; i < ref.length; i += 1) {
       ref[i].mediaPath = process.env.TEMPURL + ref[i].mediaPath;
       ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
 
       if (videoMp4Pattern.test(ref[i].mediaPath)) {
-        ref[i]['video'] = true;
+        ref[i].video = true;
       } else {
-        ref[i]['video'] = false;
+        ref[i].video = false;
       }
 
       if (bookmarkIds.includes(ref[i].postId)) {
-        ref[i]['bookmarked'] = true;
+        ref[i].bookmarked = true;
       } else {
-        ref[i]['bookmarked'] = false;
+        ref[i].bookmarked = false;
       }
 
       if (likeIds.includes(ref[i].postId)) {
-        ref[i]['liked'] = true;
+        ref[i].liked = true;
       } else {
-        ref[i]['liked'] = false;
+        ref[i].liked = false;
       }
 
       data.push(ref[i]);
@@ -296,7 +300,7 @@ Post.init({
   hooks: {
     afterCreate: async (post, options) => {
       try {
-        const tags = post['tags'];
+        const { tags } = post;
         if (tags.length !== 0) {
           tags.forEach((tag) => {
             Tag.createUpdateTag(tag);

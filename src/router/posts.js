@@ -1,18 +1,20 @@
+/* eslint-disable consistent-return */
+/* eslint-disable camelcase */
+/* eslint-disable max-len */
 const express = require('express');
-const {auth, optionalAuth} = require('./../middlewares/auth');
-const Post = require('./../models/post');
 const multer = require('multer');
 const sharp = require('sharp');
-const path = require('path');
-const {v4} = require('uuid');
-const Bookmark = require('./../models/bookmark');
-const {Op} = require('sequelize');
-const Like = require('./../models/like');
-const Friend = require('./../models/friend');
-const {maxDate, minDate} = require('./../utils/dateFunctions');
-const {hashTagPattern, handlePattern} = require('./../utils/regexPatterns');
+const { v4 } = require('uuid');
+const { Op } = require('sequelize');
 const fs = require('fs');
-const {postImgPath, videoPath, commentImgPath} = require('./../utils/paths');
+const { auth, optionalAuth } = require('../middlewares/auth');
+const Post = require('../models/post');
+const Bookmark = require('../models/bookmark');
+const Like = require('../models/like');
+const Friend = require('../models/friend');
+const { maxDate, minDate } = require('../utils/dateFunctions');
+const { hashTagPattern, handlePattern } = require('../utils/regexPatterns');
+const { postImgPath, videoPath, commentImgPath } = require('../utils/paths');
 
 const router = express.Router();
 
@@ -25,14 +27,14 @@ const upload = multer({
       return cb(Error('Unsupported files uploaded to the server'));
     }
 
-    cb(undefined, true);
+    return cb(undefined, true);
   },
 });
 
 const mediaMiddleware = upload.fields([
-  {name: 'image', maxCount: 1},
-  {name: 'video'},
-  {name: 'commentMedia'},
+  { name: 'image', maxCount: 1 },
+  { name: 'video' },
+  { name: 'commentMedia' },
 ]);
 
 router.post('/posts', auth, mediaMiddleware, async (req, res) => {
@@ -46,28 +48,28 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
      * 201 for success
      */
   try {
-    post = JSON.parse(req.body.info); // post info
+    const post = JSON.parse(req.body.info); // post info
     post.username = req.user.username;
-    post['tags'] = post['description'].match(hashTagPattern) === null ? [] : post['description'].match(hashTagPattern);
-    post['mentions'] = post['description'].match(handlePattern) === null ? [] : post['description'].match(handlePattern);
+    post.tags = post.description.match(hashTagPattern) === null ? [] : post.description.match(hashTagPattern);
+    post.mentions = post.description.match(handlePattern) === null ? [] : post.description.match(handlePattern);
 
     const file = req.files;
     if (file.image !== undefined) {
       console.log('if of imAGE');
       const filename = `${v4()}.webp`;
-      const filePath = postImgPath + '/' + filename;
-      sharp(file.image[0].buffer).webp({lossless: true}).toFile(filePath);
-      post['mediaPath'] = '/images/posts/' + filename;
-      post['mediaIncluded'] = true;
+      const filePath = `${postImgPath}/${filename}`;
+      sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
+      post.mediaPath = `/images/posts/${filename}`;
+      post.mediaIncluded = true;
     }
 
     if (file.video !== undefined) {
       console.log('if of video');
       const filename = `${v4()}.mp4`;
-      const filePath = videoPath + '/' + filename;
-      fs.writeFileSync(filePath, file.video[0].buffer, {encoding: 'ascii'});
-      post['mediaPath'] = '/videos/' + filename;
-      post['mediaIncluded'] = true;
+      const filePath = `${videoPath}/${filename}`;
+      fs.writeFileSync(filePath, file.video[0].buffer, { encoding: 'ascii' });
+      post.mediaPath = `/videos/${filename}`;
+      post.mediaIncluded = true;
     }
     await Post.create(post);
     res.status(201).send();
@@ -84,19 +86,17 @@ router.get('/posts', auth, async (req, res) => {
      * Full function in posts
      * 200 for success
      */
-  const skip =
-        req.query.skip === undefined ? undefined : parseInt(req.query.skip);
-  const limit =
-        req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit, 10);
   try {
     const posts = await Post.getUserFeed(req.user.username, skip, limit);
     const bookmarkRef = Bookmark.getUserBookmarksIds(
-        posts.map((post) => post.postId),
-        req.user.username,
+      posts.map((post) => post.postId),
+      req.user.username,
     );
     const likesRef = Like.getUserLikeIds(
-        posts.map((post) => post.postId),
-        req.user.username,
+      posts.map((post) => post.postId),
+      req.user.username,
     );
 
     const parallelResp = await Promise.all([bookmarkRef, likesRef]);
@@ -125,8 +125,8 @@ router.get('/posts/:username/media', auth, async (req, res) => {
      * 200 for success
      * 404 for no media or non associated user
      */
-  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
-  const limit = req.query.limit === undefined ? 20 : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? 20 : parseInt(req.query.limit, 10);
 
   try {
     const media = await Post.findAll({
@@ -139,10 +139,10 @@ router.get('/posts/:username/media', auth, async (req, res) => {
       raw: true,
       attributes: ['mediaPath', 'likes', 'comments', 'postId'],
       offset: skip,
-      limit: limit,
+      limit,
     });
 
-    for (let i = 0; i < media.length; i++) {
+    for (let i = 0; i < media.length; i += 1) {
       media[i].mediaPath = process.env.TEMPURL + media[i].mediaPath;
     }
 
@@ -157,19 +157,17 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
   /**
      * route to get stars of user
      */
-  const skip =
-        req.query.skip === undefined ? undefined : parseInt(req.query.skip);
-  const limit =
-        req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit, 10);
   try {
     const likes = await Like.getUserLikes(req.params.username, skip, limit);
     const idsRef = Like.getUserLikeIds(
-        likes.map((i) => i.postId),
-        req.user.username,
+      likes.map((i) => i.postId),
+      req.user.username,
     );
     const bookIdsRef = Bookmark.getUserBookmarksIds(
-        likes.map((i) => i.postId),
-        req.user.username,
+      likes.map((i) => i.postId),
+      req.user.username,
     );
 
     const [ids, bookIds] = await Promise.all([idsRef, bookIdsRef]);
@@ -183,50 +181,50 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
 });
 
 router.post(
-    '/posts/:postId/comment',
-    auth,
-    mediaMiddleware,
-    async (req, res) => {
-      /**
+  '/posts/:postId/comment',
+  auth,
+  mediaMiddleware,
+  async (req, res) => {
+    /**
          * Create comment reference to parent id
          * 201 for success
          * 400 for failure
          */
-      try {
-        const post = await Post.findOne({where: {postId: req.params.postId}});
-        if (!post) {
-          throw new Error('Invalid request');
-        }
-
-        const raw = JSON.parse(req.body.info);
-
-        const commentBody = {
-          replyTo: post.postId,
-          username: req.user.username,
-          description: raw.commentValue,
-          type: 'reply',
-          mediaPath: undefined,
-          mediaIncluded: false,
-        };
-
-        const file = req.files;
-        if (file.commentMedia !== undefined) {
-          console.log('if of imAGE');
-          const filename = `${v4()}.png`;
-          const filePath = commentImgPath + '/' + filename;
-          await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
-          commentBody['mediaPath'] = '/images/comments/' + filename;
-          commentBody['mediaIncluded'] = true;
-        }
-
-        const comment = await Post.comment(commentBody);
-
-        res.status(201).send({comment});
-      } catch (e) {
-        console.log(e);
-        res.status(400).send();
+    try {
+      const post = await Post.findOne({ where: { postId: req.params.postId } });
+      if (!post) {
+        throw new Error('Invalid request');
       }
-    },
+
+      const raw = JSON.parse(req.body.info);
+
+      const commentBody = {
+        replyTo: post.postId,
+        username: req.user.username,
+        description: raw.commentValue,
+        type: 'reply',
+        mediaPath: undefined,
+        mediaIncluded: false,
+      };
+
+      const file = req.files;
+      if (file.commentMedia !== undefined) {
+        console.log('if of imAGE');
+        const filename = `${v4()}.png`;
+        const filePath = `${commentImgPath}/${filename}`;
+        await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+        commentBody.mediaPath = `/images/comments/${filename}`;
+        commentBody.mediaIncluded = true;
+      }
+
+      const comment = await Post.comment(commentBody);
+
+      res.status(201).send({ comment });
+    } catch (e) {
+      console.log(e);
+      res.status(400).send();
+    }
+  },
 );
 
 // GET /posts/postid/comment?skip=0&limit=10
@@ -236,13 +234,11 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
      * 201 for success
      * 500 for failure
      */
-  const skip =
-        req.query.skip === undefined ? undefined : parseInt(req.query.skip);
-  const limit =
-        req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit, 10);
   try {
     const comments = await Post.getComments(req.params.postId, skip, limit);
-    for (i = 0; i < comments.length; i++) {
+    for (let i = 0; i < comments.length; i += 1) {
       comments[i].avatarPath = process.env.TEMPURL + comments[i].avatarPath;
       comments[i].mediaPath = process.env.TEMPURL + comments[i].mediaPath;
     }
@@ -261,7 +257,7 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
      */
   try {
     const didExists = await Post.findOne({
-      where: {postId: req.params.postId},
+      where: { postId: req.params.postId },
     });
     if (!didExists) {
       throw new Error('Invalid request');
@@ -280,11 +276,11 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
     }
 
     const likes = await Post.like(
-        req.params.postId,
-        req.body.username,
-        req.body.postedBy,
+      req.params.postId,
+      req.body.username,
+      req.body.postedBy,
     );
-    res.send({likes});
+    res.send({ likes });
   } catch (e) {
     if (e.toString() === 'Error: Present') {
       await Like.destroy({
@@ -294,10 +290,10 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
           postedBy: req.body.postedBy,
         },
       });
-      Post.increment({likes: -1}, {where: {postId: req.params.postId}});
+      Post.increment({ likes: -1 }, { where: { postId: req.params.postId } });
     }
-    const likes = await Like.count({where: {postId: req.params.postId}});
-    res.status(400).send({likes});
+    const likes = await Like.count({ where: { postId: req.params.postId } });
+    res.status(400).send({ likes });
   }
 });
 
@@ -308,10 +304,8 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
      * 200 for successfull retrieval
      * 500 for errors
      */
-  const skip =
-        req.query.skip === undefined ? undefined : parseInt(req.query.skip);
-  const limit =
-        req.query.limit === undefined ? undefined : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? undefined : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit, 10);
   try {
     const stargazers = await Like.getStarGazers(req.params.postId, skip, limit);
     const isFollowing = await Friend.findAll({
@@ -335,20 +329,19 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
       raw: true,
     }).map((follo) => follo.username);
 
-    for (let i = 0; i < stargazers.length; i++) {
-      stargazers[i]['avatarPath'] =
-                process.env.TEMPURL + stargazers[i]['avatarPath'];
+    for (let i = 0; i < stargazers.length; i += 1) {
+      stargazers[i].avatarPath = process.env.TEMPURL + stargazers[i].avatarPath;
 
-      if (isFollowing.includes(stargazers[i]['username'])) {
-        stargazers[i]['isFollowing'] = true;
+      if (isFollowing.includes(stargazers[i].username)) {
+        stargazers[i].isFollowing = true;
       } else {
-        stargazers[i]['isFollowing'] = false;
+        stargazers[i].isFollowing = false;
       }
 
-      if (follows_you.includes(stargazers[i]['username'])) {
-        stargazers[i]['follows_you'] = true;
+      if (follows_you.includes(stargazers[i].username)) {
+        stargazers[i].follows_you = true;
       } else {
-        stargazers[i]['follows_you'] = false;
+        stargazers[i].follows_you = false;
       }
     }
     res.send(stargazers);
@@ -365,16 +358,15 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
      * 404 if no posts
      * 200 with atleast one post
      */
-  let likes;
-  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip);
-  const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit);
+  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
   try {
-    const username = req.params.username;
+    const { username } = req.params;
     const posts = await Post.getUserPosts(username, skip, limit);
     if (req.user !== undefined) {
       const likesRef = Like.getUserLikeIds(
-          posts.map((post) => post.postId),
-          req.user.username,
+        posts.map((post) => post.postId),
+        req.user.username,
       );
 
       const bookRef = Bookmark.getUserBookmarksIds(posts.map((post) => post.postId), req.user.username);
