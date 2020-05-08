@@ -2,11 +2,12 @@
 /* eslint-disable camelcase */
 const express = require('express');
 
-// routers
 const path = require('path');
 const http = require('http');
 const socketio = require('socket.io');
 const { Op } = require('sequelize');
+
+// routers
 const userRouter = require('./router/user');
 const postRouter = require('./router/posts');
 const miscRouter = require('./router/misc');
