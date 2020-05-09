@@ -38,11 +38,6 @@ class User extends Model {
     return user;
   }
 
-  static async addFriend(username, followed_username) {
-    const result = await Friend.create({ username, followed_username });
-    console.log(result);
-  }
-
   /**
     * Returns a Auth token for a user
     * @member {User}
