@@ -7,6 +7,7 @@ const User = require('../models/user');
 const Friend = require('../models/friend');
 const { auth } = require('../middlewares/auth');
 const Tracker = require('../models/tracker');
+const firebaseAdmin = require('../../admin/firebase');
 
 router.post('/users', async (req, res) => {
   /**
@@ -18,10 +19,31 @@ router.post('/users', async (req, res) => {
   try {
     const user = await User.create(req.body.user);
     user.avatarPath = process.env.TEMPURL + user.avatarPath;
-    const token = await user.generateAuthToken();
-    const userData = await user.removeSensetiveUserData();
-    console.log(req.body.device);
-    Tracker.create({ username: req.body.user.username, token, ...req.body.device });
+    const [token, userData] = await Promise.all([
+      user.generateAuthToken(),
+      user.removeSensetiveUserData(),
+    ]);
+
+    const trackValues = { username: req.body.user.username, token, ...req.body.device };
+    // check if device is in data base
+    const isDevicePresent = await Tracker.findOne({
+      where: {
+        uniqueId: req.body.device.uniqueId,
+      },
+    });
+
+    if (!isDevicePresent) {
+      // create if device is not present
+      Tracker.create(trackValues);
+    } else {
+      // update values if device present
+      Tracker.update(trackValues, {
+        where: {
+          uniqueId: req.body.device.uniqueId,
+        },
+      });
+    }
+
     res.status(201).send({ user: userData, token });
   } catch (e) {
     console.log(e);
@@ -36,13 +58,38 @@ router.post('/users/login', async (req, res) => {
      * 404 for not found
      */
   try {
-    const user = await User.findByCredentials(req.body.email, req.body.password);
-    user.avatarPath = process.env.TEMPURL + user.avatarPath;
-    const token = await user.generateAuthToken();
-    const userData = await user.removeSensetiveUserData();
+    const user = await User.findByCredentials(req.body.user.email, req.body.user.password);
+    const [token, userData] = await Promise.all([
+      user.generateAuthToken(),
+      user.removeSensetiveUserData(),
+    ]);
+
+    userData.avatarPath = process.env.TEMPURL + userData.avatarPath;
     userData.headerPhoto = process.env.TEMPURL + userData.headerPhoto;
+
+    const trackValues = { username: userData.username, token, ...req.body.device };
+    // check if device is in data base
+    const isDevicePresent = await Tracker.findOne({
+      where: {
+        uniqueId: req.body.device.uniqueId,
+      },
+    });
+
+    if (!isDevicePresent) {
+      // create if device is not present
+      Tracker.create(trackValues);
+    } else {
+      // update values if device present
+      Tracker.update(trackValues, {
+        where: {
+          uniqueId: req.body.device.uniqueId,
+        },
+      });
+    }
+
     res.send({ user: userData, token });
   } catch (e) {
+    console.log(e);
     res.status(404).send(e);
   }
 });
@@ -134,8 +181,24 @@ router.post('/users/follow', auth, async (req, res) => {
       username: req.user.username,
       followed_username: req.body.username,
     });
+
+    const tokens = await Tracker.findAll({
+      where: {
+        username: req.body.username,
+      },
+    }).map((token) => token.notificationToken);
+
+    firebaseAdmin.messaging().sendMulticast({
+      tokens,
+      notification: {
+        title: req.user.name,
+        body: `@${req.user.username} started following you`,
+      },
+    });
+
     res.status(201).send();
   } catch (e) {
+    console.log(e);
     res.status(400).send();
   }
 });
@@ -289,6 +352,12 @@ router.post('/users/logout', auth, async (req, res) => {
       where: { username: req.user.username },
     });
 
+    await Tracker.destroy({
+      where: {
+        token: req.token,
+      },
+    });
+
     res.send();
   } catch (e) {
     console.log(e);
@@ -301,6 +370,12 @@ router.post('/users/logouAll', auth, async (req, res) => {
     req.user.token = [];
 
     await User.update(req.user, {
+      where: {
+        username: req.user.username,
+      },
+    });
+
+    await Tracker.destroy({
       where: {
         username: req.user.username,
       },

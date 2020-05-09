@@ -233,7 +233,7 @@ User.init({
 
 const func = async () => {
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true });
   } catch (e) {
     console.log(e);
   }

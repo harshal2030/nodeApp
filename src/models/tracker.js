@@ -7,7 +7,6 @@ class Tracker extends Model {}
 Tracker.init({
   username: {
     type: DataTypes.STRING,
-    allowNull: false,
     validate: {
       len: [1, 26],
       is: {
@@ -18,8 +17,6 @@ Tracker.init({
   },
   token: {
     type: DataTypes.STRING(2048),
-    allowNull: false,
-    unique: true,
   },
   os: {
     type: DataTypes.STRING,
