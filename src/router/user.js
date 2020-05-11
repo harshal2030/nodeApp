@@ -24,24 +24,26 @@ router.post('/users', async (req, res) => {
       user.removeSensetiveUserData(),
     ]);
 
-    const trackValues = { username: req.body.user.username, token, ...req.body.device };
-    // check if device is in data base
-    const isDevicePresent = await Tracker.findOne({
-      where: {
-        uniqueId: req.body.device.uniqueId,
-      },
-    });
-
-    if (!isDevicePresent) {
-      // create if device is not present
-      Tracker.create(trackValues);
-    } else {
-      // update values if device present
-      Tracker.update(trackValues, {
+    if (req.body.device) {
+      const trackValues = { username: req.body.user.username, token, ...req.body.device };
+      // check if device is in data base
+      const isDevicePresent = await Tracker.findOne({
         where: {
           uniqueId: req.body.device.uniqueId,
         },
       });
+
+      if (!isDevicePresent) {
+        // create if device is not present
+        Tracker.create(trackValues);
+      } else {
+        // update values if device present
+        Tracker.update(trackValues, {
+          where: {
+            uniqueId: req.body.device.uniqueId,
+          },
+        });
+      }
     }
 
     res.status(201).send({ user: userData, token });
@@ -67,24 +69,26 @@ router.post('/users/login', async (req, res) => {
     userData.avatarPath = process.env.TEMPURL + userData.avatarPath;
     userData.headerPhoto = process.env.TEMPURL + userData.headerPhoto;
 
-    const trackValues = { username: userData.username, token, ...req.body.device };
-    // check if device is in data base
-    const isDevicePresent = await Tracker.findOne({
-      where: {
-        uniqueId: req.body.device.uniqueId,
-      },
-    });
-
-    if (!isDevicePresent) {
-      // create if device is not present
-      Tracker.create(trackValues);
-    } else {
-      // update values if device present
-      Tracker.update(trackValues, {
+    if (req.body.device) {
+      const trackValues = { username: userData.username, token, ...req.body.device };
+      // check if device is in data base
+      const isDevicePresent = await Tracker.findOne({
         where: {
           uniqueId: req.body.device.uniqueId,
         },
       });
+
+      if (!isDevicePresent) {
+        // create if device is not present
+        Tracker.create(trackValues);
+      } else {
+        // update values if device present
+        Tracker.update(trackValues, {
+          where: {
+            uniqueId: req.body.device.uniqueId,
+          },
+        });
+      }
     }
 
     res.send({ user: userData, token });
@@ -190,15 +194,21 @@ router.post('/users/follow', auth, async (req, res) => {
 
     firebaseAdmin.messaging().sendMulticast({
       tokens,
+      android: {
+        priority: 'high',
+      },
       notification: {
         title: req.user.name,
-        body: `@${req.user.username} started following you`,
+        body: `@${req.user.username} is now following you`,
+      },
+      data: {
+        type: 'openProfile',
+        username: req.user.username,
       },
     });
 
     res.status(201).send();
   } catch (e) {
-    console.log(e);
     res.status(400).send();
   }
 });

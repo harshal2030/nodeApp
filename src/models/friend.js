@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
-const {DataTypes, Model} = require('sequelize');
+const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../db');
-const {usernamePattern} = require('./../utils/regexPatterns');
+const { usernamePattern } = require('../utils/regexPatterns');
 
 /**
  * Class for friends table
@@ -25,7 +26,7 @@ class Friend extends Model {
                     AS followings INNER JOIN users ON users."username" = followings."followed_username"`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, skip, limit},
+      replacements: { username, skip, limit },
       raw: true,
     });
 
@@ -49,7 +50,7 @@ class Friend extends Model {
                     AS followings INNER JOIN users ON users."username" = followings."username"`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, skip, limit},
+      replacements: { username, skip, limit },
       raw: true,
     });
 
@@ -80,11 +81,21 @@ Friend.init({
       },
     },
   },
+  notify: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   sequelize,
   timestamps: true,
   modelName: 'friends',
   freezeTableName: true,
 });
+
+const func = async () => {
+  await Friend.sync({ alter: true });
+};
+
+// func();
 
 module.exports = Friend;

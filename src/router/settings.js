@@ -5,6 +5,8 @@ const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
 const { v4 } = require('uuid');
+
+const { httpChecker } = require('../utils/regexPatterns');
 const User = require('../models/user');
 const { auth } = require('../middlewares/auth');
 const { avatarPath, headerPath, publicPath } = require('../utils/paths');
@@ -42,6 +44,7 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
   try {
     const { user } = req;
     updates.forEach((update) => user[update] = userUpdate[update]);
+    user.website = httpChecker.test(user.website) ? user.website : `http://${user.website}`;
 
     const { files } = req;
     if (files.avatar !== undefined) {

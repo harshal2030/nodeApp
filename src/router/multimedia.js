@@ -128,4 +128,50 @@ router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
   }
 });
 
+router.get('/media/video/:postId/thumbnail', optionalAuth, async (req, res) => {
+  try {
+    const postR = await sequelize.query(
+      `SELECT posts."mediaPath", posts."username", 
+      users."private" FROM posts INNER JOIN users ON 
+      users."username" = posts."username" WHERE posts."postId" = :postId`,
+      {
+        replacements: { postId: req.params.postId },
+        raw: true,
+      },
+    );
+
+    const post = postR[0][0];
+
+    if (!videoMp4Pattern.test(post.mediaPath)) {
+      throw new Error('No video associated');
+    }
+
+    // check if account is private
+    if (post.private === true) {
+      if (req.user === undefined) {
+        return res.status(403).send({ error: 'Login to view post' });
+      }
+
+      const allowed = await Friend.findOne({
+        where: {
+          username: req.user.username,
+          followed_username: post.username,
+        },
+        raw: true,
+      });
+
+      // break if use is not followed
+      if (!allowed) {
+        return res.status(401).send({ error: 'You need to follow the user to view' });
+      }
+    }
+
+    const thumbnail = `${mediaPath}/videos/thumbnails/${post.mediaPath.slice(8)}.webp`;
+
+    res.sendFile(thumbnail);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
 module.exports = router;

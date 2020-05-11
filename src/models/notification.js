@@ -2,19 +2,10 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../db');
 const { usernamePattern } = require('../utils/regexPatterns');
 
-/**
- * Class for blocked account
- * @class Block
- */
-class Block extends Model {}
+class Notification extends Model {}
 
-Block.init({
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  blocked: {
+Notification.init({
+  username: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
@@ -25,28 +16,28 @@ Block.init({
       },
     },
   },
-  blockedBy: {
+  action: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      len: [1, 26],
-      is: {
-        args: usernamePattern,
-        msg: 'Invalid username',
-      },
-    },
+  },
+  reference: {
+    type: DataTypes.STRING,
+  },
+  seen: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
 }, {
   sequelize,
-  timestamps: true,
-  modelName: 'blocks',
+  modelName: 'notifications',
   freezeTableName: true,
+  timestamps: true,
 });
 
 const func = async () => {
-  Block.sync();
+  await Notification.sync();
 };
 
 func();
 
-module.exports = Block;
+module.exports = Notification;

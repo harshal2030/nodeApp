@@ -1,7 +1,6 @@
-const {Model, DataTypes, Op} = require('sequelize');
+const { Model, DataTypes, Op } = require('sequelize');
 const sequelize = require('../db');
-const Post = require('./post');
-const {usernamePattern} = require('./../utils/regexPatterns');
+const { usernamePattern } = require('../utils/regexPatterns');
 
 /**
  * Class for bookmark table
@@ -17,7 +16,7 @@ class Bookmark extends Model {
      *
      * @return {Array} array of bookmarks
      */
-  static async getUserBookmarks(username, skip=0, limit=20) {
+  static async getUserBookmarks(username, skip = 0, limit = 20) {
     const query = `WITH cte_books AS (
             SELECT posts.* FROM posts
             INNER JOIN bookmarks
@@ -32,11 +31,10 @@ class Bookmark extends Model {
 
 
     const result = await sequelize.query(query,
-        {
-          replacements: {username, skip, limit},
-          raw: true,
-        },
-    );
+      {
+        replacements: { username, skip, limit },
+        raw: true,
+      });
 
     return result[0];
   }
@@ -80,7 +78,7 @@ class Bookmark extends Model {
     });
 
     if (bookmarks === 0) {
-      Bookmark.create({postId, username});
+      Bookmark.create({ postId, username });
     } else {
       Bookmark.destroy({
         where: {
@@ -90,7 +88,7 @@ class Bookmark extends Model {
       });
     }
 
-    return bookmarks === 0 ? true : false;
+    return bookmarks === 0;
   }
 }
 
@@ -119,7 +117,7 @@ Bookmark.init({
 
 // eslint-disable-next-line no-unused-vars
 const func = async () => {
-  await Bookmark.sync({alter: true});
+  await Bookmark.sync({ alter: true });
 };
 
 // func()

@@ -1,8 +1,9 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable max-len */
-const {DataTypes, Model, Op} = require('sequelize');
-const sequelize = require('../db');
+const { DataTypes, Model, Op } = require('sequelize');
 const validator = require('validator');
-const {usernamePattern} = require('./../utils/regexPatterns');
+const sequelize = require('../db');
+const { usernamePattern } = require('../utils/regexPatterns');
 
 /**
  * Class for likes table
@@ -31,7 +32,7 @@ class Like extends Model {
         cte_likes."username" = users."username"`;
 
     const result = await sequelize.query(query, {
-      replacements: {username, skip, limit},
+      replacements: { username, skip, limit },
       raw: true,
     });
 
@@ -80,7 +81,7 @@ class Like extends Model {
             OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {
-      replacements: {postId, skip, limit},
+      replacements: { postId, skip, limit },
       raw: true,
     });
 
@@ -89,29 +90,29 @@ class Like extends Model {
 }
 
 Like.init(
-    {
-      postId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      likedBy: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          len: [4, 25],
-          is: {
-            args: usernamePattern,
-            msg: 'Invalid username',
-          },
+  {
+    postId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    likedBy: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        len: [4, 25],
+        is: {
+          args: usernamePattern,
+          msg: 'Invalid username',
         },
       },
     },
-    {
-      sequelize,
-      timestamps: true,
-      modelName: 'likes',
-      freezeTableName: true,
-    },
+  },
+  {
+    sequelize,
+    timestamps: true,
+    modelName: 'likes',
+    freezeTableName: true,
+  },
 );
 
 module.exports = Like;
