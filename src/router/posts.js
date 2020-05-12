@@ -67,7 +67,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
       console.log('if of imAGE');
       const filename = `${v4()}.webp`;
       const filePath = `${postImgPath}/${filename}`;
-      sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
+      await sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
       post.mediaPath = `/images/posts/${filename}`;
       post.mediaIncluded = true;
     }

@@ -9,8 +9,8 @@ class Tag extends Model {
      * @returns {void}
      */
   static async createUpdateTag(tag) {
-    const type = tag[0] === '#' ? '#' : '$';
-    const _tag = tag.slice(1);
+    const type = '#';
+    const _tag = tag;
     try {
       const ifExists = await Tag.findOne({
         where: {
