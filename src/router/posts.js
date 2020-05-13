@@ -7,14 +7,18 @@ const sharp = require('sharp');
 const { v4 } = require('uuid');
 const { Op } = require('sequelize');
 const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+
 const { auth, optionalAuth } = require('../middlewares/auth');
 const Post = require('../models/post');
 const Bookmark = require('../models/bookmark');
 const Like = require('../models/like');
 const Friend = require('../models/friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
-const { hashTagPattern, handlePattern } = require('../utils/regexPatterns');
-const { postImgPath, videoPath, commentImgPath } = require('../utils/paths');
+const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
+const {
+  postImgPath, videoPath, commentImgPath, thumbnailPath,
+} = require('../utils/paths');
 
 const router = express.Router();
 
@@ -44,30 +48,43 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
      * Current token from auth middleware (req.token)
      * name for image = image
      * post info contained in req.body.info
-     * imagePath: public/images/post
+     * imagePath: media/images/post
+     * videoPath: media/videos
+     * thumbnailPath: media/videos/thumbnail
      * 201 for success
      */
   try {
     const post = JSON.parse(req.body.info); // post info
     post.username = req.user.username;
-    post.tags = post.description.match(hashTagPattern) === null ? [] : post.description.match(hashTagPattern);
-    post.mentions = post.description.match(handlePattern) === null ? [] : post.description.match(handlePattern);
+    post.tags = post.description.match(hashTagPattern) === null
+      ? [] : post.description.match(hashTagPattern).map((tag) => tag.slice(1));
+    post.mentions = post.description.match(handlePattern) === null
+      ? [] : post.description.match(handlePattern).map((handle) => handle.slice(1));
 
     const file = req.files;
+    // process image
     if (file.image !== undefined) {
       console.log('if of imAGE');
       const filename = `${v4()}.webp`;
       const filePath = `${postImgPath}/${filename}`;
-      sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
+      await sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
       post.mediaPath = `/images/posts/${filename}`;
       post.mediaIncluded = true;
     }
 
+    // process video
     if (file.video !== undefined) {
       console.log('if of video');
       const filename = `${v4()}.mp4`;
       const filePath = `${videoPath}/${filename}`;
       fs.writeFileSync(filePath, file.video[0].buffer, { encoding: 'ascii' });
+
+      // generate thumbnail from video at 1 sec
+      ffmpeg(filePath).screenshots({
+        timestamps: [1],
+        filename: `${filename}.webp`,
+        folder: thumbnailPath,
+      });
       post.mediaPath = `/videos/${filename}`;
       post.mediaIncluded = true;
     }
@@ -143,7 +160,11 @@ router.get('/posts/:username/media', auth, async (req, res) => {
     });
 
     for (let i = 0; i < media.length; i += 1) {
-      media[i].mediaPath = process.env.TEMPURL + media[i].mediaPath;
+      if (videoMp4Pattern.test(media[i].mediaPath)) {
+        media[i].video = true;
+      } else {
+        media[i].video = false;
+      }
     }
 
     res.status(200).send(media);

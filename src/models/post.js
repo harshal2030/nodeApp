@@ -187,6 +187,7 @@ class Post extends Model {
 
       if (videoMp4Pattern.test(ref[i].mediaPath)) {
         ref[i].video = true;
+        ref[i].thumbnail = `${process.env.TEMPURL + ref[i].mediaPath}.webp`;
       } else {
         ref[i].video = false;
       }

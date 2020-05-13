@@ -10,7 +10,15 @@ const postImgPath = path.join(__dirname, '../../media/images/posts');
 const commentImgPath = path.join(__dirname, '../../media/images/comments');
 const videoPath = path.join(__dirname, '../../media/videos');
 const mediaPath = path.join(__dirname, './../../media');
+const thumbnailPath = path.join(__dirname, '../../media/videos/thumbnails');
 
 module.exports = {
-  publicPath, postImgPath, commentImgPath, videoPath, avatarPath, headerPath, mediaPath,
+  publicPath,
+  postImgPath,
+  commentImgPath,
+  videoPath,
+  avatarPath,
+  headerPath,
+  mediaPath,
+  thumbnailPath,
 };

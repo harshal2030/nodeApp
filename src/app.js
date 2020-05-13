@@ -2,17 +2,19 @@
 /* eslint-disable camelcase */
 const express = require('express');
 
-// routers
 const path = require('path');
 const http = require('http');
 const socketio = require('socket.io');
 const { Op } = require('sequelize');
+
+// routers
 const userRouter = require('./router/user');
 const postRouter = require('./router/posts');
 const miscRouter = require('./router/misc');
 const settingRouter = require('./router/settings');
 const multimediaRouter = require('./router/multimedia');
 const tagRouter = require('./router/tags');
+const trackRouter = require('./router/tracker');
 
 
 const sequelize = require('./db');
@@ -214,6 +216,7 @@ app.use(userRouter);
 app.use(miscRouter);
 app.use(settingRouter);
 app.use(multimediaRouter);
+app.use(trackRouter);
 
 app.get('/date', (req, res) => {
   const today = new Date();

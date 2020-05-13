@@ -1,11 +1,16 @@
+/* eslint-disable no-return-assign */
+/* eslint-disable consistent-return */
 const express = require('express');
-const {auth} = require('./../middlewares/auth');
-const User = require('./../models/user');
 const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
-const {v4} = require('uuid');
-const {avatarPath, headerPath, publicPath} = require('./../utils/paths');
+const { v4 } = require('uuid');
+
+const { httpChecker } = require('../utils/regexPatterns');
+const User = require('../models/user');
+const Friend = require('../models/friend');
+const { auth } = require('../middlewares/auth');
+const { avatarPath, headerPath, publicPath } = require('../utils/paths');
 
 const router = express.Router();
 
@@ -23,8 +28,8 @@ const upload = multer({
 });
 
 const mediaMiddleware = upload.fields([
-  {name: 'avatar', maxCount: 1},
-  {name: 'header', maxCount: 1},
+  { name: 'avatar', maxCount: 1 },
+  { name: 'header', maxCount: 1 },
 ]);
 
 router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
@@ -34,22 +39,23 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
-    return res.status(400).send({error: 'Bad request parameters'});
+    return res.status(400).send({ error: 'Bad request parameters' });
   }
 
   try {
-    const user = req.user;
+    const { user } = req;
     updates.forEach((update) => user[update] = userUpdate[update]);
+    user.website = httpChecker.test(user.website) ? user.website : `http://${user.website}`;
 
-    const files = req.files;
+    const { files } = req;
     if (files.avatar !== undefined) {
-      if (fs.existsSync(`${publicPath}/${req.user.avatarPath}`) &&
-                req.user.avatarPath !== '/images/avatar/default.png') {
+      if (fs.existsSync(`${publicPath}/${req.user.avatarPath}`)
+                && req.user.avatarPath !== '/images/avatar/default.png') {
         fs.unlinkSync(`${publicPath}/${req.user.avatarPath}`);
       }
 
       const fileName = `${v4()}.png`;
-      const filePath=`${avatarPath}/${fileName}`;
+      const filePath = `${avatarPath}/${fileName}`;
       await sharp(files.avatar[0].buffer).png().toFile(filePath);
       user.avatarPath = `/images/avatar/${fileName}`;
     }
@@ -60,7 +66,7 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
       }
 
       const fileName = `${v4()}.png`;
-      const filePath=`${headerPath}/${fileName}`;
+      const filePath = `${headerPath}/${fileName}`;
       await sharp(files.header[0].buffer).png().toFile(filePath);
       user.headerPhoto = `/images/header/${fileName}`;
     }
@@ -77,6 +83,34 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(400).send();
+  }
+});
+
+router.put('/settings/notify', auth, async (req, res) => {
+  try {
+    const isValid = await Friend.findOne({
+      where: {
+        username: req.user.username,
+        followed_username: req.body.username,
+      },
+    });
+
+    if (!isValid) {
+      throw new Error('Inavlid request');
+    }
+
+    await Friend.update({
+      notify: !isValid.notify,
+    }, {
+      where: {
+        username: req.user.username,
+        followed_username: req.body.username,
+      },
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
   }
 });
 
