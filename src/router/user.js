@@ -160,8 +160,10 @@ router.get('/users/:username/full', auth, async (req, res) => {
 
     if (!isFollowing) {
       userData.isFollowing = false;
+      userData.notify = false;
     } else {
       userData.isFollowing = true;
+      userData.notify = isFollowing.notify;
     }
 
     res.send(userData);
@@ -192,23 +194,26 @@ router.post('/users/follow', auth, async (req, res) => {
       },
     }).map((token) => token.notificationToken);
 
-    firebaseAdmin.messaging().sendMulticast({
-      tokens,
-      android: {
-        priority: 'high',
-      },
-      notification: {
-        title: req.user.name,
-        body: `@${req.user.username} is now following you`,
-      },
-      data: {
-        type: 'openProfile',
-        username: req.user.username,
-      },
-    });
+    if (tokens.length !== 0) {
+      firebaseAdmin.messaging().sendMulticast({
+        tokens,
+        android: {
+          priority: 'high',
+        },
+        notification: {
+          title: req.user.name,
+          body: `@${req.user.username} is now following you`,
+        },
+        data: {
+          type: 'openProfile',
+          username: req.user.username,
+        },
+      });
+    }
 
     res.status(201).send();
   } catch (e) {
+    console.log(e);
     res.status(400).send();
   }
 });
@@ -232,6 +237,7 @@ router.delete('/users/follow', auth, async (req, res) => {
 
     res.send();
   } catch (e) {
+    console.log(e);
     res.status(400).send();
   }
 });

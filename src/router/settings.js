@@ -8,6 +8,7 @@ const { v4 } = require('uuid');
 
 const { httpChecker } = require('../utils/regexPatterns');
 const User = require('../models/user');
+const Friend = require('../models/friend');
 const { auth } = require('../middlewares/auth');
 const { avatarPath, headerPath, publicPath } = require('../utils/paths');
 
@@ -82,6 +83,34 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(400).send();
+  }
+});
+
+router.put('/settings/notify', auth, async (req, res) => {
+  try {
+    const isValid = await Friend.findOne({
+      where: {
+        username: req.user.username,
+        followed_username: req.body.username,
+      },
+    });
+
+    if (!isValid) {
+      throw new Error('Inavlid request');
+    }
+
+    await Friend.update({
+      notify: !isValid.notify,
+    }, {
+      where: {
+        username: req.user.username,
+        followed_username: req.body.username,
+      },
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
   }
 });
 
