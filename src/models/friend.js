@@ -86,6 +86,13 @@ Friend.init({
     defaultValue: false,
   },
 }, {
+  validate: {
+    checkUsers() {
+      if (this.username === this.followed_username) {
+        throw new Error('Got identical key value pairs');
+      }
+    },
+  },
   sequelize,
   timestamps: true,
   modelName: 'friends',

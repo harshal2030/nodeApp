@@ -183,9 +183,11 @@ router.post('/users/follow', auth, async (req, res) => {
       throw new Error('Got identical value pair.');
     }
 
-    await Friend.create({
-      username: req.user.username,
-      followed_username: req.body.username,
+    await Friend.findOrCreate({
+      where: {
+        username: req.user.username,
+        followed_username: req.body.username,
+      },
     });
 
     const tokens = await Tracker.findAll({

@@ -66,6 +66,7 @@ router.post('/block/user', auth, async (req, res) => {
       throw new Error('No such user exists');
     }
 
+    // default type value is block
     await Block.create({
       blocked: req.body.username,
       blockedBy: req.user.username,
@@ -87,6 +88,50 @@ router.delete('/block/user', auth, async (req, res) => {
     });
 
     if (!removedBlock) {
+      throw new Error();
+    }
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.post('/mute/user', auth, async (req, res) => {
+  try {
+    const doExists = User.findOne({
+      where: {
+        username: req.body.username,
+      },
+    });
+
+    if (!doExists) {
+      throw new Error('User not exists');
+    }
+
+    await Block.create({
+      blocked: req.body.username,
+      blockedBy: req.user.username,
+      type: 'mute',
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.delete('/mute/user', auth, async (req, res) => {
+  try {
+    const removedMute = await Block.findOrCreate({
+      where: {
+        blocked: req.body.username,
+        blockedBy: req.user.username,
+        type: 'mute',
+      },
+    });
+
+    if (!removedMute) {
       throw new Error();
     }
 
