@@ -99,21 +99,17 @@ router.delete('/block/user', auth, async (req, res) => {
 
 router.post('/mute/user', auth, async (req, res) => {
   try {
-    const doExists = User.findOne({
+    const instance = Block.findOrCreate({
       where: {
-        username: req.body.username,
+        blocked: req.body.username,
+        blockedBy: req.user.username,
+        type: 'mute',
       },
     });
 
-    if (!doExists) {
+    if (!instance) {
       throw new Error('User not exists');
     }
-
-    await Block.create({
-      blocked: req.body.username,
-      blockedBy: req.user.username,
-      type: 'mute',
-    });
 
     res.sendStatus(200);
   } catch (e) {
@@ -123,7 +119,7 @@ router.post('/mute/user', auth, async (req, res) => {
 
 router.delete('/mute/user', auth, async (req, res) => {
   try {
-    const removedMute = await Block.findOrCreate({
+    const removedMute = await Block.destroy({
       where: {
         blocked: req.body.username,
         blockedBy: req.user.username,
