@@ -3,6 +3,8 @@ const express = require('express');
 
 const router = express.Router();
 const { Op } = require('sequelize');
+
+const Block = require('../models/block');
 const User = require('../models/user');
 const Friend = require('../models/friend');
 const { auth } = require('../middlewares/auth');
@@ -133,6 +135,18 @@ router.get('/users/:username/full', auth, async (req, res) => {
     if (!user) {
       throw new Error('No user found');
     }
+
+    const blocked = await Block.findOne({
+      where: {
+        blocked: req.user.username,
+        blockedBy: req.params.username,
+      },
+    });
+
+    if (blocked) {
+      return res.status(403).send({ msg: 'You are blocked by requested user' });
+    }
+
     const userData = await user.removeSensetiveUserData();
     userData.avatarPath = process.env.TEMPURL + user.avatarPath;
     userData.headerPhoto = process.env.TEMPURL + user.headerPhoto;
@@ -166,9 +180,9 @@ router.get('/users/:username/full', auth, async (req, res) => {
       userData.notify = isFollowing.notify;
     }
 
-    res.send(userData);
+    return res.send(userData);
   } catch (e) {
-    res.status(404).send(e);
+    return res.status(404).send(e);
   }
 });
 

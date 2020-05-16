@@ -67,10 +67,12 @@ router.post('/block/user', auth, async (req, res) => {
     }
 
     // default type value is block
-    await Block.create({
+    const block = await Block.create({
       blocked: req.body.username,
       blockedBy: req.user.username,
     });
+
+    block.performBlock();
 
     res.sendStatus(200);
   } catch (e) {
