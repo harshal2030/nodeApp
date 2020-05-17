@@ -99,10 +99,4 @@ Friend.init({
   freezeTableName: true,
 });
 
-const func = async () => {
-  await Friend.sync({ alter: true });
-};
-
-// func();
-
 module.exports = Friend;

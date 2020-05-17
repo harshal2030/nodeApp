@@ -101,10 +101,4 @@ Block.init({
   freezeTableName: true,
 });
 
-const func = async () => {
-  Block.sync({ alter: true });
-};
-
-// func();
-
 module.exports = Block;

@@ -227,14 +227,13 @@ User.init({
 });
 
 const func = async () => {
-  try {
-    await User.sync({ alter: true });
-  } catch (e) {
-    console.log(e);
-  }
-  // await User.sync({alter: true})
+  // try {
+  //   await sequelize.sync({ force: true });
+  // } catch (e) {
+  //   console.log(e);
+  // }
 };
 
-// func();
+func();
 
 module.exports = User;
