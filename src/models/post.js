@@ -57,24 +57,27 @@ class Post extends Model {
     */
   static async getUserFeed(username, skip = 0, limit = 20) {
     const query = `WITH cte_posts AS (
-            SELECT posts."id", posts."postId", posts."username", posts."title",
-			posts."description", posts."mediaIncluded", posts."mediaPath",
-			posts."likes", posts."comments", posts."createdAt"
-			FROM posts
-            INNER JOIN friends ON
-            friends."followed_username" = posts."username" WHERE 
-			posts."type"='post' AND friends."username" = :username
-            UNION ALL
-            SELECT posts."id", posts."postId", posts."username", posts."title",
-			posts."description", posts."mediaIncluded", posts."mediaPath",
-			posts."likes", posts."comments", posts."createdAt" 
-			FROM posts WHERE
-            posts."username"=:username AND posts."type" = 'post'
-            ORDER BY "createdAt" DESC OFFSET :skip LIMIT :limit
-        )
-        SELECT users."avatarPath", users."name", cte_posts.* FROM users
-        INNER JOIN cte_posts ON
-        cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
+        SELECT posts."id", posts."postId", posts."username", posts."title",
+  posts."description", posts."mediaIncluded", posts."mediaPath",
+  posts."likes", posts."comments", posts."createdAt"
+  FROM posts
+        INNER JOIN friends ON
+        friends."followed_username" = posts."username" WHERE 
+  posts."type"='post' AND friends."username" = :username
+        UNION ALL
+        SELECT posts."id", posts."postId", posts."username", posts."title",
+  posts."description", posts."mediaIncluded", posts."mediaPath",
+  posts."likes", posts."comments", posts."createdAt" 
+  FROM posts WHERE
+        posts."username"=:username AND posts."type" = 'post'
+        ORDER BY "createdAt" DESC OFFSET :skip LIMIT :limit
+    )
+    SELECT users."avatarPath", users."name", cte_posts.* FROM users
+    INNER JOIN cte_posts ON
+    cte_posts."username" = users."username" WHERE cte_posts."username" NOT IN 
+    (
+      SELECT blocks."blocked" FROM blocks WHERE blocks."blockedBy" = :username
+    ) ORDER BY cte_posts."createdAt" DESC`;
 
     const result = await sequelize.query(query, {
       replacements: { username, skip, limit },

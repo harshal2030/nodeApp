@@ -34,10 +34,4 @@ Notification.init({
   timestamps: true,
 });
 
-const func = async () => {
-  await Notification.sync();
-};
-
-func();
-
 module.exports = Notification;

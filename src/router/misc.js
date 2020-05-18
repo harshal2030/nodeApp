@@ -2,10 +2,12 @@
 const express = require('express');
 const Bookmark = require('../models/bookmark');
 const { auth } = require('../middlewares/auth');
-
-const router = express.Router();
 const Like = require('../models/like');
 const Post = require('../models/post');
+const Block = require('../models/block');
+const User = require('../models/user');
+
+const router = express.Router();
 
 // POST /misc?option=bookmark
 router.post('/misc', auth, async (req, res) => {
@@ -49,6 +51,91 @@ router.get('/misc', auth, async (req, res) => {
     }
   } catch (e) {
     res.status(500).send(e);
+  }
+});
+
+router.post('/block/user', auth, async (req, res) => {
+  try {
+    const doExists = await User.findOne({
+      where: {
+        username: req.user.username,
+      },
+    });
+
+    if (!doExists) {
+      throw new Error('No such user exists');
+    }
+
+    // default type value is block
+    const block = await Block.create({
+      blocked: req.body.username,
+      blockedBy: req.user.username,
+    });
+
+    block.performBlock();
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.delete('/block/user', auth, async (req, res) => {
+  try {
+    const removedBlock = await Block.destroy({
+      where: {
+        blocked: req.body.username,
+        blockedBy: req.user.username,
+      },
+    });
+
+    if (!removedBlock) {
+      throw new Error();
+    }
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.post('/mute/user', auth, async (req, res) => {
+  try {
+    const instance = Block.findOrCreate({
+      where: {
+        blocked: req.body.username,
+        blockedBy: req.user.username,
+        type: 'mute',
+      },
+    });
+
+    if (!instance) {
+      throw new Error('User not exists');
+    }
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.delete('/mute/user', auth, async (req, res) => {
+  try {
+    const removedMute = await Block.destroy({
+      where: {
+        blocked: req.body.username,
+        blockedBy: req.user.username,
+        type: 'mute',
+      },
+    });
+
+    if (!removedMute) {
+      throw new Error();
+    }
+
+    res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
   }
 });
 
