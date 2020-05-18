@@ -57,11 +57,6 @@ Block.init({
         msg: 'Invalid username',
       },
     },
-    references: {
-      model: User,
-      key: 'username',
-      deferrable: Sequelize.Deferrable.INITIALLY_IMMEDIATE,
-    },
   },
   blockedBy: {
     type: DataTypes.STRING,
@@ -72,11 +67,6 @@ Block.init({
         args: usernamePattern,
         msg: 'Invalid username',
       },
-    },
-    references: {
-      model: User,
-      key: 'username',
-      deferrable: Sequelize.Deferrable.INITIALLY_IMMEDIATE,
     },
   },
   type: {
