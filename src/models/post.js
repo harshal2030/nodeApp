@@ -317,10 +317,4 @@ Post.init({
   },
 });
 
-const func = async () => {
-  await Post.sync({ force: true });
-};
-
-func();
-
 module.exports = Post;

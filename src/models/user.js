@@ -10,7 +10,6 @@ const path = require('path');
 const sequelize = require('../db');
 const Friend = require('./friend');
 const { usernamePattern } = require('../utils/regexPatterns');
-const { httpChecker } = require('../utils/regexPatterns');
 
 const keyPath = path.join(__dirname, '../keys/private.key');
 const privateKey = fs.readFileSync(keyPath, 'utf-8');
@@ -219,21 +218,11 @@ User.init({
   timestamps: true,
   freezeTableName: true,
   hooks: {
-    beforeSave: (user, options) => {
+    beforeSave: (user) => {
       user.name = validator.escape(user.name);
       user.password = sha512(user.password).toString();
     },
   },
 });
-
-const func = async () => {
-  // try {
-  //   await sequelize.sync({ force: true });
-  // } catch (e) {
-  //   console.log(e);
-  // }
-};
-
-func();
 
 module.exports = User;

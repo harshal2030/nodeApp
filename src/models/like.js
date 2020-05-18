@@ -111,10 +111,6 @@ Like.init(
         },
       },
     },
-    hi: {
-      type: DataTypes.STRING,
-      defaultValue: 'ji',
-    },
   },
   {
     sequelize,
