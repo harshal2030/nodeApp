@@ -63,13 +63,13 @@ class Post extends Model {
   FROM posts
         INNER JOIN friends ON
         friends."followed_username" = posts."username" WHERE 
-  posts."type"='post' AND friends."username" = :username
+  posts."replyTo" IS NULL AND friends."username" = :username
         UNION ALL
         SELECT posts."id", posts."postId", posts."username", posts."title",
   posts."description", posts."mediaIncluded", posts."mediaPath",
   posts."likes", posts."comments", posts."createdAt" 
   FROM posts WHERE
-        posts."username"=:username AND posts."type" = 'post'
+        posts."username"=:username AND posts."replyTo" IS NULL
         ORDER BY "createdAt" DESC OFFSET :skip LIMIT :limit
     )
     SELECT users."avatarPath", users."name", cte_posts.* FROM users
@@ -99,7 +99,7 @@ class Post extends Model {
     const query = `with cte_replies AS (
             SELECT posts.* FROM posts INNER JOIN friends ON 
             friends."followed_username" = posts."username"
-            WHERE posts."type" = 'reply' AND friends."username"=:username
+            WHERE posts."replyTo" IS NOT NULL AND friends."username"=:username
             AND posts."replyTo" IN (:postIds)
             ORDER BY posts."createdAt" OFFSET :skip LIMIT :limit
         )
@@ -131,7 +131,7 @@ class Post extends Model {
             posts."likes", posts."comments", posts."createdAt" FROM posts
             INNER JOIN users ON
             users."username" = posts."username" WHERE 
-            posts."type"= 'post' AND posts."username"=:username 
+            posts."replyTo" IS NULL AND posts."username"=:username 
             ORDER BY posts."createdAt" DESC OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {
@@ -236,14 +236,17 @@ Post.init({
       },
     },
   },
-  type: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'post',
-  },
   sharable: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+  },
+  replyTo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  parentId: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   title: {
     type: DataTypes.STRING(60),
@@ -252,10 +255,6 @@ Post.init({
     validate: {
       min: 1,
     },
-  },
-  replyTo: {
-    type: DataTypes.STRING,
-    allowNull: true,
   },
   description: {
     type: DataTypes.STRING(2048),

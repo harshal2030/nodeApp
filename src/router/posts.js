@@ -262,7 +262,6 @@ router.post(
         replyTo: post.postId,
         username: req.user.username,
         description: raw.commentValue,
-        type: 'reply',
         mediaPath: undefined,
         mediaIncluded: false,
       };
