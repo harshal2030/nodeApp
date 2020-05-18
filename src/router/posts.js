@@ -27,7 +27,7 @@ const upload = multer({
     fileSize: 200 * 1000000,
   },
   fileFilter(req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|mp4)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|mp4|mkv)$/)) {
       return cb(Error('Unsupported files uploaded to the server'));
     }
 
@@ -123,14 +123,20 @@ router.delete('/posts', auth, async (req, res) => {
 
     await Post.destroy({
       where: {
-        postId: req.body.postId,
-        username: req.user.username,
+        [Op.or]: [
+          {
+            postId: req.body.postId,
+            username: req.user.username,
+          },
+          {
+            parentId: req.body.postId,
+          },
+        ],
       },
     });
 
     res.sendStatus(200);
   } catch (e) {
-    console.log(e);
     res.sendStatus(400);
   }
 });
@@ -260,6 +266,7 @@ router.post(
 
       const commentBody = {
         replyTo: post.postId,
+        parentId: post.parentId || post.postId,
         username: req.user.username,
         description: raw.commentValue,
         mediaPath: undefined,

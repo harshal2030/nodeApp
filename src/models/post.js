@@ -38,7 +38,7 @@ class Post extends Model {
      */
   static async comment(commentBody) {
     const { type, replyTo } = commentBody;
-    if (type !== 'reply' || replyTo === '') {
+    if (replyTo === '' || replyTo === null) {
       throw new Error('Not a valid type comment');
     }
     await Post.create(commentBody);

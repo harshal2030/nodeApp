@@ -45,7 +45,10 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
   try {
     const { user } = req;
     updates.forEach((update) => user[update] = userUpdate[update]);
-    user.website = httpChecker.test(user.website) ? user.website : `http://${user.website}`;
+
+    if (user.website !== '') {
+      user.website = httpChecker.test(user.website) ? user.website : `http://${user.website}`;
+    }
 
     const { files } = req;
     if (files.avatar !== undefined) {
