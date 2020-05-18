@@ -100,6 +100,8 @@ router.put('/settings/notify', auth, async (req, res) => {
     }
 
     await Friend.update({
+      username: isValid.username,
+      followed_username: isValid.followed_username,
       notify: !isValid.notify,
     }, {
       where: {
@@ -110,6 +112,7 @@ router.put('/settings/notify', auth, async (req, res) => {
 
     res.sendStatus(200);
   } catch (e) {
+    console.log(e);
     res.sendStatus(400);
   }
 });

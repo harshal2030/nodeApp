@@ -57,10 +57,4 @@ Tag.init({
   timestamps: true,
 });
 
-const func = async () => {
-  await Tag.sync();
-};
-
-func();
-
 module.exports = Tag;

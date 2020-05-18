@@ -94,6 +94,11 @@ Like.init(
     postId: {
       type: DataTypes.STRING,
       allowNull: false,
+      references: {
+        model: 'posts',
+        key: 'postId',
+      },
+      onDelete: 'CASCADE',
     },
     likedBy: {
       type: DataTypes.STRING,

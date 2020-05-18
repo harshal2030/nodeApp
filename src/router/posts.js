@@ -17,7 +17,7 @@ const Friend = require('../models/friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const {
-  postImgPath, videoPath, commentImgPath, thumbnailPath,
+  postImgPath, videoPath, commentImgPath, thumbnailPath, mediaPath,
 } = require('../utils/paths');
 
 const router = express.Router();
@@ -93,6 +93,45 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(400).send(e);
+  }
+});
+
+router.delete('/posts', auth, async (req, res) => {
+  try {
+    const post = await Post.findOne({
+      where: {
+        postId: req.body.postId,
+        username: req.user.username,
+      },
+    });
+
+    if (!post) {
+      throw new Error('No such post exists');
+    }
+
+    if (post.mediaIncluded) {
+      if (videoMp4Pattern.test(post.mediaPath)) {
+        const filePath = mediaPath + post.mediaPath;
+        const thumbPath = `${mediaPath}/videos/thumbnails/${post.mediaPath.slice(8)}.webp`;
+        fs.unlinkSync(filePath);
+        fs.unlinkSync(thumbPath);
+      } else {
+        const filePath = mediaPath + post.mediaPath;
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    await Post.destroy({
+      where: {
+        postId: req.body.postId,
+        username: req.user.username,
+      },
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(400);
   }
 });
 

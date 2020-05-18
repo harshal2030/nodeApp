@@ -115,11 +115,4 @@ Bookmark.init({
   freezeTableName: true,
 });
 
-// eslint-disable-next-line no-unused-vars
-const func = async () => {
-  await Bookmark.sync({ alter: true });
-};
-
-// func()
-
 module.exports = Bookmark;

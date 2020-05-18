@@ -86,16 +86,17 @@ Friend.init({
     defaultValue: false,
   },
 }, {
+  validate: {
+    checkUsers() {
+      if (this.username === this.followed_username) {
+        throw new Error('Got identical key value pairs');
+      }
+    },
+  },
   sequelize,
   timestamps: true,
   modelName: 'friends',
   freezeTableName: true,
 });
-
-const func = async () => {
-  await Friend.sync({ alter: true });
-};
-
-// func();
 
 module.exports = Friend;
