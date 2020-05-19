@@ -155,6 +155,7 @@ tagSocket.on('connection', (socket) => {
             },
           },
           limit: 6,
+          attributes: ['tag', 'posts'],
         });
 
         socket.emit('tags', tags);

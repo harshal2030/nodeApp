@@ -3,12 +3,17 @@
 /* eslint-disable new-cap */
 /* eslint-disable max-len */
 /* eslint-disable no-tabs */
-const { Model, DataTypes, QueryTypes } = require('sequelize');
+const {
+  Model, DataTypes, QueryTypes, Op,
+} = require('sequelize');
+const fs = require('fs');
+
 const sequelize = require('../db');
 const Like = require('./like');
-const { usernamePattern } = require('../utils/regexPatterns');
 const Tag = require('./tag');
-const { videoMp4Pattern } = require('../utils/regexPatterns');
+
+const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
+const { mediaPath } = require('../utils/paths');
 
 /**
  * Initiates the Post model for the app
@@ -37,7 +42,7 @@ class Post extends Model {
      * @return {number} number of comments
      */
   static async comment(commentBody) {
-    const { type, replyTo } = commentBody;
+    const { replyTo } = commentBody;
     if (replyTo === '' || replyTo === null) {
       throw new Error('Not a valid type comment');
     }
@@ -211,6 +216,34 @@ class Post extends Model {
     }
 
     return data;
+  }
+
+  /**
+   * Deletes media of comment of a post
+   * @returns {void}
+   */
+  async removeReplyMedia() {
+    const { postId } = this.toJSON();
+    const rawPaths = await Post.findAll({
+      where: {
+        parentId: postId,
+        mediaPath: {
+          [Op.not]: null,
+        },
+      },
+      attributes: ['mediaPath'],
+      raw: true,
+    }).map((path) => path.mediaPath);
+
+    rawPaths.forEach((path) => {
+      const filePath = mediaPath + path;
+
+      fs.unlink(filePath, (err) => undefined);
+      if (videoMp4Pattern.test(filePath)) {
+        const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
+        fs.unlink(thumbPath, (err) => undefined);
+      }
+    });
   }
 }
 

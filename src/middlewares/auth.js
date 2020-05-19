@@ -63,7 +63,7 @@ const optionalAuth = async (req, res, next) => {
     next();
   } catch (e) {
     if (e === 'no such user') {
-      res.send(401).send();
+      res.status(401).send();
     } else if (e === 'no token') {
       req.user = undefined;
       next();

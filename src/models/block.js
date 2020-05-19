@@ -1,13 +1,14 @@
 /* eslint-disable no-unused-vars */
 const { Model, DataTypes, Op } = require('sequelize');
 const Sequelize = require('sequelize');
-const sequelize = require('../db');
-const User = require('./user');
-const { usernamePattern } = require('../utils/regexPatterns');
-const Friend = require('./friend');
-const Post = require('./post');
-const Like = require('./like');
+const fs = require('fs');
 
+const sequelize = require('../db');
+
+const Friend = require('./friend');
+
+const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
+const { mediaPath } = require('../utils/paths');
 /**
  * Class for blocked account
  * @class Block
@@ -17,7 +18,7 @@ class Block extends Model {
     const block = this.toJSON();
     const { blocked, blockedBy } = block;
 
-    await Friend.destroy({
+    Friend.destroy({
       where: {
         username: {
           [Op.or]: [blocked, blockedBy],
@@ -37,6 +38,34 @@ class Block extends Model {
     cte_likes WHERE cte_likes."postId" = posts."postId"`, {
       replacements: { blocked, blockedBy },
       raw: true,
+    });
+
+    const paths = await sequelize.query(`WITH cte_comments AS (
+      DELETE FROM posts WHERE username=:blocked
+        AND "parentId" IN (SELECT "postId" FROM posts WHERE username=:blockedBy) 
+      RETURNING "parentId", "mediaPath"
+    ), cte_filters AS (
+      SELECT count("parentId") cc, 
+      "parentId", "mediaPath" FROM cte_comments GROUP BY "parentId", "mediaPath"
+    )
+    UPDATE posts SET "comments" = "comments" - cte_filters."cc"
+    FROM cte_filters WHERE posts."postId" = cte_filters."parentId"
+    RETURNING cte_filters."mediaPath"`, {
+      replacements: { blocked, blockedBy },
+      raw: true,
+    });
+
+    console.log(paths);
+    console.log(paths[0]);
+
+    paths[0].forEach((path) => {
+      const filePath = mediaPath + path.mediaPath;
+
+      fs.unlink(filePath, (err) => console.log(err));
+      if (videoMp4Pattern.test(filePath)) {
+        const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
+        fs.unlink(thumbPath, (err) => console.log(err));
+      }
     });
   }
 }

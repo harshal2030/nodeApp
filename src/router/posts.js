@@ -109,6 +109,8 @@ router.delete('/posts', auth, async (req, res) => {
       throw new Error('No such post exists');
     }
 
+    post.removeReplyMedia();
+
     if (post.mediaIncluded) {
       if (videoMp4Pattern.test(post.mediaPath)) {
         const filePath = mediaPath + post.mediaPath;
@@ -276,9 +278,9 @@ router.post(
       const file = req.files;
       if (file.commentMedia !== undefined) {
         console.log('if of imAGE');
-        const filename = `${v4()}.png`;
+        const filename = `${v4()}.webp`;
         const filePath = `${commentImgPath}/${filename}`;
-        await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+        await sharp(file.commentMedia[0].buffer).webp({ lossless: true }).toFile(filePath);
         commentBody.mediaPath = `/images/comments/${filename}`;
         commentBody.mediaIncluded = true;
       }
