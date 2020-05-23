@@ -63,7 +63,7 @@ class Post extends Model {
   static async getUserFeed(username, skip = 0, limit = 20) {
     const query = `WITH cte_posts AS (
         SELECT posts."id", posts."postId", posts."username", posts."title",
-  posts."description", posts."mediaIncluded", posts."mediaPath",
+  posts."description", posts."mediaIncluded",
   posts."likes", posts."comments", posts."createdAt"
   FROM posts
         INNER JOIN friends ON
@@ -71,7 +71,7 @@ class Post extends Model {
   posts."replyTo" IS NULL AND friends."username" = :username
         UNION ALL
         SELECT posts."id", posts."postId", posts."username", posts."title",
-  posts."description", posts."mediaIncluded", posts."mediaPath",
+  posts."description", posts."mediaIncluded",
   posts."likes", posts."comments", posts."createdAt" 
   FROM posts WHERE
         posts."username"=:username AND posts."replyTo" IS NULL

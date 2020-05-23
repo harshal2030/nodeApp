@@ -40,31 +40,27 @@ class Block extends Model {
       raw: true,
     });
 
-    const paths = await sequelize.query(`WITH cte_comments AS (
-      DELETE FROM posts WHERE username=:blocked
-        AND "parentId" IN (SELECT "postId" FROM posts WHERE username=:blockedBy) 
-      RETURNING "parentId", "mediaPath"
-    ), cte_filters AS (
-      SELECT count("parentId") cc, 
-      "parentId", "mediaPath" FROM cte_comments GROUP BY "parentId", "mediaPath"
+    const paths = await sequelize.query(`WITH rawInfo AS (
+      SELECT "parentId", count("parentId") cc FROM posts WHERE username=:blocked
+      AND "parentId" IN (SELECT "postId" FROM posts WHERE username=:blockedBy)
+      GROUP BY "parentId"
+    ), updateCommand AS (
+      UPDATE posts SET "comments" = "comments" - rawInfo."cc" FROM rawInfo
+      WHERE posts."postId" = rawInfo."parentId"
     )
-    UPDATE posts SET "comments" = "comments" - cte_filters."cc"
-    FROM cte_filters WHERE posts."postId" = cte_filters."parentId"
-    RETURNING cte_filters."mediaPath"`, {
+    DELETE FROM posts USING rawInfo WHERE rawInfo."parentId" = posts."parentId" 
+    RETURNING "mediaPath"`, {
       replacements: { blocked, blockedBy },
       raw: true,
     });
 
-    console.log(paths);
-    console.log(paths[0]);
-
     paths[0].forEach((path) => {
       const filePath = mediaPath + path.mediaPath;
 
-      fs.unlink(filePath, (err) => console.log(err));
+      fs.unlink(filePath, (err) => undefined);
       if (videoMp4Pattern.test(filePath)) {
         const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
-        fs.unlink(thumbPath, (err) => console.log(err));
+        fs.unlink(thumbPath, (err) => undefined);
       }
     });
   }

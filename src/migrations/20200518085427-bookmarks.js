@@ -17,7 +17,7 @@ module.exports = {
         field: 'postId',
       },
       onDelete: 'cascade',
-      onUpdate: 'cascade',
+      onUpdate: 'NO ACTION',
     });
   },
 
