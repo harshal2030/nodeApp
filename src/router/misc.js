@@ -1,7 +1,10 @@
 /* eslint-disable max-len */
 const express = require('express');
-const Bookmark = require('../models/bookmark');
+const { Op } = require('sequelize');
+
 const { auth } = require('../middlewares/auth');
+const sequelize = require('../db');
+const Bookmark = require('../models/bookmark');
 const Like = require('../models/like');
 const Post = require('../models/post');
 const Block = require('../models/block');
@@ -134,6 +137,36 @@ router.delete('/mute/user', auth, async (req, res) => {
     }
 
     res.sendStatus(200);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
+
+router.get('/hashtag/:tag', auth, async (req, res) => {
+  try {
+    const posts = await sequelize.query(`SELECT posts."id", posts."postId", posts."username", posts."title",
+      posts."description", posts."mediaIncluded",
+      posts."likes", posts."comments", posts."createdAt",
+      users."name", users."avatarPath"
+      FROM posts INNER JOIN users USING (username) 
+      WHERE :tag = ANY(tags) AND users."private" = false LIMIT 10`, {
+      replacements: { tag: req.params.tag },
+      raw: true,
+    });
+
+    const regex = `#(${req.params.tag})`;
+
+    const people = await User.findAll({
+      where: {
+        bio: {
+          [Op.regexp]: regex,
+        },
+      },
+      limit: 4,
+      attributes: { exclude: ['password', 'tokens', 'adm_num', 'email', 'updatedAt', 'createdAt'] },
+    });
+
+    res.send({ people, posts: posts[0] });
   } catch (e) {
     res.sendStatus(400);
   }
