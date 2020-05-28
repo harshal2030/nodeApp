@@ -201,7 +201,7 @@ router.get('/posts/:username/media', auth, async (req, res) => {
         },
       },
       raw: true,
-      attributes: ['mediaPath', 'likes', 'comments', 'postId'],
+      attributes: ['likes', 'comments', 'postId', 'id'],
       offset: skip,
       limit,
     });

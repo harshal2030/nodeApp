@@ -19,7 +19,7 @@ class Friend extends Model {
      * @return {Array} array of user with their username, name, avatarPath
      */
   static async getUserFollowing(username, skip = 0, limit = 30) {
-    const query = `SELECT users."username", users."name", users."avatarPath" FROM 
+    const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."followed_username" FROM friends
                         WHERE friends."username" = :username
                         ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)
@@ -43,7 +43,7 @@ class Friend extends Model {
      * @return {Array} array of user with their username, name, avatarPath
      */
   static async getUserFollowers(username, skip = 0, limit = 30) {
-    const query = `SELECT users."username", users."name", users."avatarPath" FROM 
+    const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."username" FROM friends
                         WHERE friends."followed_username" = :username
                         ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)

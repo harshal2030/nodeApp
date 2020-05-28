@@ -133,7 +133,7 @@ class Post extends Model {
   static async getUserPosts(username, skip = 0, limit = 10) {
     const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
             posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
-            posts."likes", posts."comments", posts."createdAt" FROM posts
+            posts."likes", posts."comments", posts."createdAt", posts."id" FROM posts
             INNER JOIN users ON
             users."username" = posts."username" WHERE 
             posts."replyTo" IS NULL AND posts."username"=:username 
@@ -157,7 +157,7 @@ class Post extends Model {
      * @return {Array} array of comments
      */
   static async getComments(postId, skip = 0, limit = 10) {
-    const query = `SELECT posts."postId", posts."username", posts."title",
+    const query = `SELECT posts."postId", posts."username", posts."title", posts."id",
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments",
             posts."createdAt", users."name", users."avatarPath" FROM posts INNER JOIN users ON
