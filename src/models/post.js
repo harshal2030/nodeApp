@@ -11,6 +11,7 @@ const fs = require('fs');
 const sequelize = require('../db');
 const Like = require('./like');
 const Tag = require('./tag');
+const User = require('./user');
 
 const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const { mediaPath } = require('../utils/paths');
@@ -326,6 +327,18 @@ Post.init({
     checkEmptyPost() {
       if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
         throw new Error('Got an empty post');
+      }
+    },
+
+    async checkUser() {
+      const user = await User.findOne({
+        where: {
+          username: this.username,
+        },
+      });
+
+      if (!user) {
+        throw new Error('Post from unregistered user.');
       }
     },
   },

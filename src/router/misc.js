@@ -143,30 +143,40 @@ router.delete('/mute/user', auth, async (req, res) => {
 });
 
 router.get('/hashtag/:tag', auth, async (req, res) => {
+  const option = req.query.option === undefined ? 'posts' : req.query.option;
   try {
-    const posts = await sequelize.query(`SELECT posts."id", posts."postId", posts."username", posts."title",
-      posts."description", posts."mediaIncluded",
-      posts."likes", posts."comments", posts."createdAt",
-      users."name", users."avatarPath"
-      FROM posts INNER JOIN users USING (username) 
-      WHERE :tag = ANY(tags) AND users."private" = false LIMIT 10`, {
-      replacements: { tag: req.params.tag },
-      raw: true,
-    });
-
+    let result;
     const regex = `#(${req.params.tag})`;
+    switch (option) {
+      case 'posts':
+        result = await sequelize.query(`SELECT posts."id", posts."postId", posts."username", 
+        posts."title", posts."description", posts."mediaIncluded",
+        posts."likes", posts."comments", posts."createdAt",
+        users."name", users."avatarPath"
+        FROM posts INNER JOIN users USING (username) 
+        WHERE :tag = ANY(tags) AND users."private" = false LIMIT 10`, {
+          replacements: { tag: req.params.tag },
+          raw: true,
+        });
+        res.send(result[0]);
+        break;
+      case 'people':
+        result = await User.findAll({
+          where: {
+            bio: {
+              [Op.regexp]: regex,
+            },
+          },
+          attributes: ['avatarPath', 'name', 'username', 'bio', 'headerPhoto'],
+          raw: true,
+          limit: 4,
+        });
 
-    const people = await User.findAll({
-      where: {
-        bio: {
-          [Op.regexp]: regex,
-        },
-      },
-      limit: 4,
-      attributes: { exclude: ['password', 'tokens', 'adm_num', 'email', 'updatedAt', 'createdAt'] },
-    });
-
-    res.send({ people, posts: posts[0] });
+        res.send(await User.getUserInfo(result, req.user.username));
+        break;
+      default:
+        res.sendStatus(400);
+    }
   } catch (e) {
     res.sendStatus(400);
   }
