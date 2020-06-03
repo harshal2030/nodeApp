@@ -1,6 +1,7 @@
 const cluster = require('cluster');
 const os = require('os');
 
+console.log('hii');
 const server = require('./app');
 
 const port = process.env.PORT;
