@@ -26,9 +26,9 @@ router.post('/misc', auth, async (req, res) => {
     if (req.query.option === 'bookmark') { // algo for bookmarks
       const bookmarkAdded = await Bookmark.addBookmark(req.user.username, req.body.postId);
       if (bookmarkAdded) {
-        res.status(201).send();
+        res.status(200).send();
       } else { // will get removed automatically
-        res.status(403).send();
+        res.status(200).send();
       }
     }
   } catch (e) {
@@ -176,6 +176,7 @@ router.get('/hashtag/:tag', auth, async (req, res) => {
         break;
       default:
         res.sendStatus(400);
+        break;
     }
   } catch (e) {
     res.sendStatus(400);
