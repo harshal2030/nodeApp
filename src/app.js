@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const socketio = require('socket.io');
+const redisAdapter = require('socket.io-redis');
 const { Op } = require('sequelize');
 
 // routers
@@ -43,6 +44,11 @@ const validationSocket = socketio(server, {
 const tagSocket = socketio(server, {
   path: '/tags',
 });
+
+searchSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
+likeSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
+validationSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
+tagSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
 
 searchSocket.use(auth);
 likeSocket.use(auth);
@@ -219,14 +225,8 @@ app.use(settingRouter);
 app.use(multimediaRouter);
 app.use(trackRouter);
 
-app.get('/date', (req, res) => {
-  const today = new Date();
-  const dd = today.getDate();
-  const mm = today.getMonth() + 1;
-  const yyyy = today.getFullYear();
-
-  const date = `${dd}-${mm}-${yyyy}`;
-  res.send({ date });
+app.get('/', (req, res) => {
+  res.send('Download app now');
 });
 
 module.exports = server;

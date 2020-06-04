@@ -283,4 +283,6 @@ User.init({
   },
 });
 
+sequelize.sync();
+
 module.exports = User;

@@ -3,13 +3,32 @@ const express = require('express');
 const sharp = require('sharp');
 const fs = require('fs');
 
+const User = require('../models/user');
 const Friend = require('../models/friend');
 const { optionalAuth } = require('../middlewares/auth');
-const { mediaPath } = require('../utils/paths');
+const { mediaPath, publicPath } = require('../utils/paths');
 const { videoMp4Pattern } = require('../utils/regexPatterns');
 const sequelize = require('../db');
 
 const router = express.Router();
+
+router.get('/users/:username/avatar', async (req, res) => {
+  try {
+    const user = await User.findOne({
+      where: {
+        username: req.params.username,
+      },
+    });
+
+    if (!user) {
+      throw new Error();
+    }
+
+    res.sendFile(`${publicPath}/${user.avatarPath}`);
+  } catch (e) {
+    res.sendStatus(400);
+  }
+});
 
 // Get /media/posts/:id/images?lossless=false
 router.get('/media/posts/:postId/images', optionalAuth, async (req, res) => {
