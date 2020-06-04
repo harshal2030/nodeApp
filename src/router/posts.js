@@ -12,6 +12,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const Post = require('../models/post');
 const Bookmark = require('../models/bookmark');
+const User = require('../models/user');
 const Like = require('../models/like');
 const Friend = require('../models/friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
@@ -429,6 +430,15 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
   try {
+    const user = User.findOne({
+      where: {
+        username: req.user.username,
+      },
+    });
+
+    if (!user) {
+      throw new Error();
+    }
     const { username } = req.params;
     const posts = await Post.getUserPosts(username, skip, limit);
     if (req.user !== undefined) {
