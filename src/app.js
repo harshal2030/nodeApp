@@ -215,6 +215,7 @@ validationSocket.on('connection', (socket) => {
 const publicDirPath = path.join(__dirname, '../public');
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(publicDirPath));
 
 app.use(tagRouter);
