@@ -1,12 +1,14 @@
 /* eslint-disable consistent-return */
 const express = require('express');
-const sharp = require('sharp');
 const fs = require('fs');
 
 const User = require('../models/user');
 const Friend = require('../models/friend');
+const Post = require('../models/post');
 const { optionalAuth } = require('../middlewares/auth');
-const { mediaPath, publicPath } = require('../utils/paths');
+const {
+  publicPath, postImgPath, videoPath, videoThumbnailPath, imgThumbnailPath,
+} = require('../utils/paths');
 const { videoMp4Pattern } = require('../utils/regexPatterns');
 const sequelize = require('../db');
 
@@ -30,9 +32,8 @@ router.get('/users/:username/avatar', async (req, res) => {
   }
 });
 
-// Get /media/posts/:id/images?lossless=false
+// Get /media/posts/:id/images
 router.get('/media/posts/:postId/images', optionalAuth, async (req, res) => {
-  const loseless = req.query.loseless !== undefined;
   try {
     const postR = await sequelize.query(
       `SELECT posts."mediaPath", posts."username", 
@@ -67,13 +68,34 @@ router.get('/media/posts/:postId/images', optionalAuth, async (req, res) => {
       }
     }
 
-    const imagePath = mediaPath + post.mediaPath;
+    const imagePath = `${postImgPath}/${post.mediaPath}`;
 
-    const image = await sharp(imagePath).webp({ lossless: loseless }).toBuffer();
-
-    res.set({ 'Content-Type': 'image/webp' }).send(image);
+    res.sendFile(imagePath);
   } catch (e) {
     res.sendStatus(400);
+  }
+});
+
+router.get('/media/posts/:postId/thumbnail', async (req, res) => {
+  try {
+    const post = await Post.findOne({
+      where: {
+        postId: req.params.postId,
+      },
+    });
+
+    if (!post) {
+      throw new Error('No such post exists');
+    }
+
+    if (videoMp4Pattern.test(post.mediaPath)) {
+      const path = `${videoThumbnailPath}/${post.mediaPath}.jpeg`;
+      return res.sendFile(path);
+    }
+
+    res.sendFile(`${imgThumbnailPath}/${post.mediaPath}`);
+  } catch (e) {
+    res.status(400).send();
   }
 });
 
@@ -113,7 +135,7 @@ router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
       }
     }
 
-    const path = mediaPath + post.mediaPath;
+    const path = videoPath + post.mediaPath;
     const stat = fs.statSync(path);
     const fileSize = stat.size;
     const { range } = req.headers;
@@ -142,52 +164,6 @@ router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
       res.writeHead(200, head);
       fs.createReadStream(path).pipe(res);
     }
-  } catch (e) {
-    res.sendStatus(400);
-  }
-});
-
-router.get('/media/video/:postId/thumbnail', optionalAuth, async (req, res) => {
-  try {
-    const postR = await sequelize.query(
-      `SELECT posts."mediaPath", posts."username", 
-      users."private" FROM posts INNER JOIN users ON 
-      users."username" = posts."username" WHERE posts."postId" = :postId`,
-      {
-        replacements: { postId: req.params.postId },
-        raw: true,
-      },
-    );
-
-    const post = postR[0][0];
-
-    if (!videoMp4Pattern.test(post.mediaPath)) {
-      throw new Error('No video associated');
-    }
-
-    // check if account is private
-    if (post.private === true) {
-      if (req.user === undefined) {
-        return res.status(403).send({ error: 'Login to view post' });
-      }
-
-      const allowed = await Friend.findOne({
-        where: {
-          username: req.user.username,
-          followed_username: post.username,
-        },
-        raw: true,
-      });
-
-      // break if use is not followed
-      if (!allowed) {
-        return res.status(401).send({ error: 'You need to follow the user to view' });
-      }
-    }
-
-    const thumbnail = `${mediaPath}/videos/thumbnails/${post.mediaPath.slice(8)}.webp`;
-
-    res.sendFile(thumbnail);
   } catch (e) {
     res.sendStatus(400);
   }

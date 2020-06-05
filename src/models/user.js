@@ -142,10 +142,7 @@ class User extends Model {
       raw: true,
     }).map((follo_you) => follo_you.username);
 
-    console.log(isFollowing, follows_you);
-
     const ref = [...users];
-    console.log(ref);
 
     for (let i = 0; i < ref.length; i += 1) {
       ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;

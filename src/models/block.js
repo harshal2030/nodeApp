@@ -111,7 +111,7 @@ Block.init({
     },
   },
   sequelize,
-  timestamps: true,
+  timestamps: false,
   modelName: 'blocks',
   freezeTableName: true,
 });

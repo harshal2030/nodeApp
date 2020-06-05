@@ -18,7 +18,7 @@ const Friend = require('../models/friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const {
-  postImgPath, videoPath, commentImgPath, thumbnailPath, mediaPath,
+  postImgPath, videoPath, commentImgPath, videoThumbnailPath, imgThumbnailPath, mediaPath,
 } = require('../utils/paths');
 
 const router = express.Router();
@@ -65,17 +65,20 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
     const file = req.files;
     // process image
     if (file.image !== undefined) {
-      console.log('if of imAGE');
-      const filename = `${v4()}.webp`;
+      const filename = `${v4()}.png`;
       const filePath = `${postImgPath}/${filename}`;
-      await sharp(file.image[0].buffer).webp({ lossless: true }).toFile(filePath);
-      post.mediaPath = `/images/posts/${filename}`;
+      await sharp(file.image[0].buffer).png().toFile(filePath);
+      sharp(file.image[0].buffer).jpeg()
+        .blur()
+        .resize({ width: 100, height: 100 })
+        .toFile(`${imgThumbnailPath}/${filename}`);
+
+      post.mediaPath = `${filename}`;
       post.mediaIncluded = true;
     }
 
     // process video
     if (file.video !== undefined) {
-      console.log('if of video');
       const filename = `${v4()}.mp4`;
       const filePath = `${videoPath}/${filename}`;
       fs.writeFileSync(filePath, file.video[0].buffer, { encoding: 'ascii' });
@@ -83,16 +86,15 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
       // generate thumbnail from video at 1 sec
       ffmpeg(filePath).screenshots({
         timestamps: [1],
-        filename: `${filename}.webp`,
-        folder: thumbnailPath,
+        filename: `${filename}.jpeg`,
+        folder: videoThumbnailPath,
       });
-      post.mediaPath = `/videos/${filename}`;
+      post.mediaPath = `${filename}`;
       post.mediaIncluded = true;
     }
     await Post.create(post);
     res.status(201).send();
   } catch (e) {
-    console.log(e);
     res.status(400).send(e);
   }
 });

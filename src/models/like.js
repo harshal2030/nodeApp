@@ -109,7 +109,7 @@ Like.init(
   },
   {
     sequelize,
-    timestamps: true,
+    timestamps: false,
     modelName: 'likes',
     freezeTableName: true,
   },

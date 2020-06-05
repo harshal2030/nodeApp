@@ -94,7 +94,7 @@ Friend.init({
     },
   },
   sequelize,
-  timestamps: true,
+  timestamps: false,
   modelName: 'friends',
   freezeTableName: true,
 });
