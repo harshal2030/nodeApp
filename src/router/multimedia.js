@@ -135,7 +135,7 @@ router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
       }
     }
 
-    const path = videoPath + post.mediaPath;
+    const path = `${videoPath}/${post.mediaPath}`;
     const stat = fs.statSync(path);
     const fileSize = stat.size;
     const { range } = req.headers;
@@ -165,7 +165,7 @@ router.get('/media/posts/:postId/video', optionalAuth, async (req, res) => {
       fs.createReadStream(path).pipe(res);
     }
   } catch (e) {
-    res.sendStatus(400);
+    res.status(400).send(e);
   }
 });
 

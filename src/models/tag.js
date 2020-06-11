@@ -54,7 +54,7 @@ Tag.init({
   sequelize,
   modelName: 'tags',
   freezeTableName: true,
-  timestamps: true,
+  timestamps: false,
 });
 
 module.exports = Tag;

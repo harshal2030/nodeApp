@@ -18,7 +18,7 @@ const Friend = require('../models/friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const {
-  postImgPath, videoPath, commentImgPath, videoThumbnailPath, imgThumbnailPath, mediaPath,
+  postImgPath, videoPath, videoThumbnailPath, imgThumbnailPath, mediaPath,
 } = require('../utils/paths');
 
 const router = express.Router();
@@ -280,11 +280,15 @@ router.post(
 
       const file = req.files;
       if (file.commentMedia !== undefined) {
-        console.log('if of imAGE');
-        const filename = `${v4()}.webp`;
-        const filePath = `${commentImgPath}/${filename}`;
-        await sharp(file.commentMedia[0].buffer).webp({ lossless: true }).toFile(filePath);
-        commentBody.mediaPath = `/images/comments/${filename}`;
+        console.log('if of imAGE cooment');
+        const filename = `${v4()}.png`;
+        const filePath = `${postImgPath}/${filename}`;
+        await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+        sharp(file.commentMedia[0].buffer).jpeg()
+          .blur()
+          .resize({ width: 100, height: 100 })
+          .toFile(`${imgThumbnailPath}/${filename}`);
+        commentBody.mediaPath = `${filename}`;
         commentBody.mediaIncluded = true;
       }
 
@@ -309,10 +313,6 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
   const limit = req.query.limit === undefined ? undefined : parseInt(req.query.limit, 10);
   try {
     const comments = await Post.getComments(req.params.postId, skip, limit);
-    for (let i = 0; i < comments.length; i += 1) {
-      comments[i].avatarPath = process.env.TEMPURL + comments[i].avatarPath;
-      comments[i].mediaPath = process.env.TEMPURL + comments[i].mediaPath;
-    }
     res.send(comments);
   } catch (e) {
     console.log(e);
@@ -320,7 +320,7 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
   }
 });
 
-router.patch('/posts/:postId/like', auth, async (req, res) => {
+router.patch('/posts/like', auth, async (req, res) => {
   /**
      * Update like insert 1 if not present, delete if present
      * 200 for insertion
@@ -328,7 +328,7 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
      */
   try {
     const didExists = await Post.findOne({
-      where: { postId: req.params.postId },
+      where: { postId: req.body.postId },
     });
     if (!didExists) {
       throw new Error('Invalid request');
@@ -336,35 +336,31 @@ router.patch('/posts/:postId/like', auth, async (req, res) => {
 
     const isPresent = await Like.findOne({
       where: {
-        postId: req.params.postId,
-        likedBy: req.body.username,
-        postedBy: req.body.postedBy,
+        postId: req.body.postId,
+        likedBy: req.user.username,
       },
     });
 
     if (isPresent) {
-      throw new Error('Present');
+      await Like.destroy({
+        where: {
+          postId: req.body.postId,
+          likedBy: req.user.username,
+        },
+      });
+      Post.increment({ likes: -1 }, { where: { postId: req.body.postId } });
+      const likes = await Like.count({ where: { postId: req.body.postId } });
+      return res.status(200).send({ likes });
     }
 
     const likes = await Post.like(
-      req.params.postId,
-      req.body.username,
-      req.body.postedBy,
+      req.body.postId,
+      req.user.username,
     );
+
     res.send({ likes });
   } catch (e) {
-    if (e.toString() === 'Error: Present') {
-      await Like.destroy({
-        where: {
-          postId: req.params.postId,
-          likedBy: req.body.username,
-          postedBy: req.body.postedBy,
-        },
-      });
-      Post.increment({ likes: -1 }, { where: { postId: req.params.postId } });
-    }
-    const likes = await Like.count({ where: { postId: req.params.postId } });
-    res.status(400).send({ likes });
+    res.sendStatus(400);
   }
 });
 
@@ -401,8 +397,6 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
     }).map((follo) => follo.username);
 
     for (let i = 0; i < stargazers.length; i += 1) {
-      stargazers[i].avatarPath = process.env.TEMPURL + stargazers[i].avatarPath;
-
       if (isFollowing.includes(stargazers[i].username)) {
         stargazers[i].isFollowing = true;
       } else {

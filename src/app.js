@@ -21,8 +21,6 @@ const trackRouter = require('./router/tracker');
 const sequelize = require('./db');
 
 // Database models
-const Like = require('./models/like');
-const Post = require('./models/post');
 const User = require('./models/user');
 const Friend = require('./models/friend');
 const Tag = require('./models/tag');
@@ -35,9 +33,6 @@ const server = http.createServer(app);
 const searchSocket = socketio(server, {
   path: '/search',
 });
-const likeSocket = socketio(server, {
-  path: '/like',
-});
 const validationSocket = socketio(server, {
   path: '/validation',
 });
@@ -46,12 +41,10 @@ const tagSocket = socketio(server, {
 });
 
 searchSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
-likeSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
 validationSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
 tagSocket.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
 
 searchSocket.use(auth);
-likeSocket.use(auth);
 tagSocket.use(auth);
 
 searchSocket.on('connection', (socket) => {
@@ -87,8 +80,6 @@ searchSocket.on('connection', (socket) => {
       }).map((follo) => follo.username);
 
       for (let i = 0; i < users.length; i += 1) {
-        users[i].avatarPath = process.env.TEMPURL + users[i].avatarPath;
-
         if (isFollowing.includes(users[i].username)) {
           users[i].isFollowing = true;
         } else {
@@ -104,46 +95,6 @@ searchSocket.on('connection', (socket) => {
       socket.emit('users', users);
     } catch (e) {
       // Send users in similar location
-    }
-  });
-});
-
-likeSocket.on('connection', (socket) => {
-  socket.on('hitLike', async (data) => {
-    try {
-      const didPostExists = await Post.findOne({
-        where: { postId: data.postId },
-      });
-
-      if (!didPostExists) {
-        throw 'no such post';
-      }
-
-      const isPresent = await Like.findOne({
-        where: {
-          postId: data.postId,
-          likedBy: socket.user.username,
-        },
-      });
-
-      if (isPresent) {
-        throw 'Present';
-      }
-
-      const likes = await Post.like(data.postId, socket.user.username);
-      likeSocket.emit('likeUpdate', { postId: data.postId, update: likes });
-    } catch (e) {
-      if (e === 'Present') {
-        await Like.destroy({
-          where: {
-            postId: data.postId,
-            likedBy: socket.user.username,
-          },
-        });
-        Post.increment({ likes: -1 }, { where: { postId: data.postId } });
-      }
-      const likes = await Like.count({ where: { postId: data.postId } });
-      likeSocket.emit('likeUpdate', { postId: data.postId, update: likes });
     }
   });
 });
@@ -169,10 +120,6 @@ tagSocket.on('connection', (socket) => {
 
       if (type === '@') {
         const users = await User.getMatchingUsers(socket.user.username, tag.slice(1));
-
-        for (let i = 0; i < users.length; i += 1) {
-          users[i].avatarPath = process.env.TEMPURL + users[i].avatarPath;
-        }
 
         socket.emit('handles', users);
       }

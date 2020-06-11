@@ -22,7 +22,7 @@ class Friend extends Model {
     const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."followed_username" FROM friends
                         WHERE friends."username" = :username
-                        ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)
+                        OFFSET :skip LIMIT :limit)
                     AS followings INNER JOIN users ON users."username" = followings."followed_username"`;
 
     const result = await sequelize.query(query, {
@@ -46,7 +46,7 @@ class Friend extends Model {
     const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."username" FROM friends
                         WHERE friends."followed_username" = :username
-                        ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)
+                        OFFSET :skip LIMIT :limit)
                     AS followings INNER JOIN users ON users."username" = followings."username"`;
 
     const result = await sequelize.query(query, {

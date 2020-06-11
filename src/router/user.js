@@ -20,7 +20,6 @@ router.post('/users', async (req, res) => {
      */
   try {
     const user = await User.create(req.body.user);
-    user.avatarPath = process.env.TEMPURL + user.avatarPath;
     const [token, userData] = await Promise.all([
       user.generateAuthToken(),
       user.removeSensetiveUserData(),
@@ -68,9 +67,6 @@ router.post('/users/login', async (req, res) => {
       user.removeSensetiveUserData(),
     ]);
 
-    userData.avatarPath = process.env.TEMPURL + userData.avatarPath;
-    userData.headerPhoto = process.env.TEMPURL + userData.headerPhoto;
-
     if (req.body.device) {
       const trackValues = { username: userData.username, token, ...req.body.device };
       // check if device is in data base
@@ -114,8 +110,7 @@ router.get('/users/:username', async (req, res) => {
       throw new Error('No user found');
     }
     const userData = await user.removeSensetiveUserData();
-    userData.avatarPath = process.env.TEMPURL + user.avatarPath;
-    userData.headerPhoto = process.env.TEMPURL + user.headerPhoto;
+
     res.send(userData);
   } catch (e) {
     console.log(e);
@@ -148,8 +143,6 @@ router.get('/users/:username/full', auth, async (req, res) => {
     }
 
     const userData = await user.removeSensetiveUserData();
-    userData.avatarPath = process.env.TEMPURL + user.avatarPath;
-    userData.headerPhoto = process.env.TEMPURL + user.headerPhoto;
 
     const requester = req.user.username;
     const isFollowing = await Friend.findOne({
@@ -292,8 +285,6 @@ router.get('/users/:username/followers', auth, async (req, res) => {
     }).map((follo_you) => follo_you.username);
 
     for (let i = 0; i < followers.length; i += 1) {
-      followers[i].avatarPath = process.env.TEMPURL + followers[i].avatarPath;
-
       if (isFollowing.includes(followers[i].username)) {
         followers[i].isFollowing = true;
       } else {
@@ -354,8 +345,6 @@ router.get('/users/:username/following', auth, async (req, res) => {
     }
 
     for (let i = 0; i < following.length; i += 1) {
-      following[i].avatarPath = process.env.TEMPURL + following[i].avatarPath;
-
       if (follows_you.includes(following[i].username)) {
         following[i].follows_you = true;
       } else {

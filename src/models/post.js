@@ -191,10 +191,7 @@ class Post extends Model {
     }
 
     for (let i = 0; i < ref.length; i += 1) {
-      ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
-
       if (videoMp4Pattern.test(ref[i].mediaPath)) {
-        console.log(ref[i].mediaPath);
         ref[i].video = true;
       } else {
         ref[i].video = false;

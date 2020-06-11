@@ -60,7 +60,7 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
       const fileName = `${v4()}.png`;
       const filePath = `${avatarPath}/${fileName}`;
       await sharp(files.avatar[0].buffer).png().toFile(filePath);
-      user.avatarPath = `/images/avatar/${fileName}`;
+      user.avatarPath = `${fileName}`;
     }
 
     if (files.header !== undefined) {
@@ -71,7 +71,7 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
       const fileName = `${v4()}.png`;
       const filePath = `${headerPath}/${fileName}`;
       await sharp(files.header[0].buffer).png().toFile(filePath);
-      user.headerPhoto = `/images/header/${fileName}`;
+      user.headerPhoto = `${fileName}`;
     }
 
     await User.update(user, {
@@ -79,9 +79,6 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
         username: req.user.username,
       },
     });
-
-    user.avatarPath = process.env.TEMPURL + user.avatarPath;
-    user.headerPhoto = process.env.TEMPURL + user.headerPhoto;
     res.send();
   } catch (e) {
     console.log(e);

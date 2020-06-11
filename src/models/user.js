@@ -145,8 +145,6 @@ class User extends Model {
     const ref = [...users];
 
     for (let i = 0; i < ref.length; i += 1) {
-      ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
-
       if (isFollowing.includes(ref[i].username)) {
         ref[i].isFollowing = true;
       } else {
@@ -226,7 +224,7 @@ User.init({
   },
   avatarPath: {
     type: DataTypes.STRING,
-    defaultValue: '/images/avatar/default.png',
+    defaultValue: 'default.png',
   },
   headerPhoto: {
     type: DataTypes.STRING,

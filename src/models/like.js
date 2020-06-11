@@ -25,7 +25,7 @@ class Like extends Model {
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments", posts."createdAt" FROM likes 
             INNER JOIN posts ON posts."postId" = likes."postId"
-            WHERE likes."likedBy" = :username ORDER BY likes."createdAt" DESC
+            WHERE likes."likedBy" = :username
             OFFSET :skip LIMIT :limit
         )
         SELECT users."avatarPath", users."name", cte_likes.* FROM users INNER JOIN cte_likes ON
@@ -77,7 +77,7 @@ class Like extends Model {
   static async getStarGazers(postId, skip = 0, limit = 20) {
     const query = `SELECT likes."likedBy" AS "username", users."avatarPath", users."name", users."id" 
             FROM likes INNER JOIN users ON likes."likedBy" = users."username"
-            WHERE likes."postId" = :postId ORDER BY likes."createdAt" DESC 
+            WHERE likes."postId" = :postId
             OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {

@@ -3,12 +3,12 @@ const express = require('express');
 const { Op } = require('sequelize');
 
 const { auth } = require('../middlewares/auth');
-const sequelize = require('../db');
 const Bookmark = require('../models/bookmark');
 const Like = require('../models/like');
 const Post = require('../models/post');
 const Block = require('../models/block');
 const User = require('../models/user');
+const Tag = require('../models/tag');
 
 const router = express.Router();
 
@@ -142,43 +142,90 @@ router.delete('/mute/user', auth, async (req, res) => {
   }
 });
 
-router.get('/hashtag/:tag', auth, async (req, res) => {
-  const option = req.query.option === undefined ? 'posts' : req.query.option;
+
+// GET /search/:query?skip=0&limit=6&criteria=hashtag
+router.get('/searchs/:query', async (req, res) => {
+  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? 6 : parseInt(req.query.limit, 10);
   try {
-    let result;
-    const regex = `#(${req.params.tag})`;
-    switch (option) {
-      case 'posts':
-        result = await sequelize.query(`SELECT posts."id", posts."postId", posts."username", 
-        posts."title", posts."description", posts."mediaIncluded",
-        posts."likes", posts."comments", posts."createdAt",
-        users."name", users."avatarPath"
-        FROM posts INNER JOIN users USING (username) 
-        WHERE :tag = ANY(tags) AND users."private" = false LIMIT 10`, {
-          replacements: { tag: req.params.tag },
-          raw: true,
-        });
-        res.send(result[0]);
-        break;
-      case 'people':
-        result = await User.findAll({
+    const { criteria } = req.query;
+    const { query } = req.params;
+
+    let tags;
+    let people;
+
+    switch (criteria) {
+      case 'hashtag':
+        tags = await Tag.findAll({
           where: {
-            bio: {
-              [Op.regexp]: regex,
+            tag: {
+              [Op.like]: `${query}%`,
             },
           },
-          attributes: ['avatarPath', 'name', 'username', 'bio', 'headerPhoto'],
+          attributes: ['tag', 'posts'],
           raw: true,
-          limit: 4,
+          offset: skip,
+          limit,
         });
 
-        res.send(await User.getUserInfo(result, req.user.username));
+        people = await User.findAll({
+          where: {
+            bio: {
+              [Op.like]: `%#${query}%`,
+            },
+          },
+          raw: true,
+          attributes: ['username', 'name', 'avatarPath'],
+          offset: skip,
+          limit,
+        });
+
+        break;
+      case 'people':
+        tags = [];
+
+        people = await User.findAll({
+          where: {
+            username: {
+              [Op.like]: `${query}%`,
+            },
+          },
+          raw: true,
+          attributes: ['username', 'name', 'avatarPath'],
+          offset: skip,
+          limit,
+        });
         break;
       default:
-        res.sendStatus(400);
+        tags = await Tag.findAll({
+          where: {
+            tag: {
+              [Op.startsWith]: query,
+            },
+          },
+          raw: true,
+          attributes: ['tag', 'posts'],
+          offset: skip,
+          limit,
+        });
+
+        people = await User.findAll({
+          where: {
+            username: {
+              [Op.like]: `${query}%`,
+            },
+          },
+          raw: true,
+          attributes: ['username', 'name', 'avatarPath'],
+          offset: skip,
+          limit,
+        });
         break;
     }
+
+    res.send({ people, tags });
   } catch (e) {
+    console.log(e);
     res.sendStatus(400);
   }
 });
