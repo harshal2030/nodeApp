@@ -74,7 +74,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
         .toFile(`${imgThumbnailPath}/${filename}`);
 
       post.mediaPath = `${filename}`;
-      post.mediaIncluded = true;
+      post.mediaIncluded = 'image';
     }
 
     // process video
@@ -90,7 +90,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
         folder: videoThumbnailPath,
       });
       post.mediaPath = `${filename}`;
-      post.mediaIncluded = true;
+      post.mediaIncluded = 'video';
     }
     await Post.create(post);
     res.status(201).send();
@@ -275,7 +275,7 @@ router.post(
         username: req.user.username,
         description: raw.commentValue,
         mediaPath: undefined,
-        mediaIncluded: false,
+        mediaIncluded: null,
       };
 
       const file = req.files;
@@ -289,7 +289,7 @@ router.post(
           .resize({ width: 100, height: 100 })
           .toFile(`${imgThumbnailPath}/${filename}`);
         commentBody.mediaPath = `${filename}`;
-        commentBody.mediaIncluded = true;
+        commentBody.mediaIncluded = 'image';
       }
 
       const comment = await Post.comment(commentBody);

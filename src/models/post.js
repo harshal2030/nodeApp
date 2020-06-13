@@ -191,12 +191,6 @@ class Post extends Model {
     }
 
     for (let i = 0; i < ref.length; i += 1) {
-      if (videoMp4Pattern.test(ref[i].mediaPath)) {
-        ref[i].video = true;
-      } else {
-        ref[i].video = false;
-      }
-
       if (bookmarkIds.includes(ref[i].postId)) {
         ref[i].bookmarked = true;
       } else {
@@ -295,8 +289,8 @@ Post.init({
     },
   },
   mediaIncluded: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    type: DataTypes.STRING(20),
+    allowNull: true,
   },
   mediaPath: {
     type: DataTypes.STRING,
@@ -321,7 +315,7 @@ Post.init({
 }, {
   validate: {
     checkEmptyPost() {
-      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
+      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === null) {
         throw new Error('Got an empty post');
       }
     },
@@ -357,5 +351,6 @@ Post.init({
     },
   },
 });
+
 
 module.exports = Post;

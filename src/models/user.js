@@ -114,7 +114,7 @@ class User extends Model {
   }
 
   /**
-   * Adds isFollowing and follows_you attrbiute to array of objects, also adds url to img path.
+   * Adds isFollowing and follows_you attrbiute to array of objects.
    * @param {Array} users array of user
    * @param {String} username username of the requester
    * @returns {Array} array with added attrbutes to objects

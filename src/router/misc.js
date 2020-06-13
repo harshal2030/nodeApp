@@ -2,13 +2,14 @@
 const express = require('express');
 const { Op } = require('sequelize');
 
-const { auth } = require('../middlewares/auth');
+const { auth, optionalAuth } = require('../middlewares/auth');
 const Bookmark = require('../models/bookmark');
 const Like = require('../models/like');
 const Post = require('../models/post');
 const Block = require('../models/block');
 const User = require('../models/user');
 const Tag = require('../models/tag');
+const sequelize = require('../db');
 
 const router = express.Router();
 
@@ -227,6 +228,76 @@ router.get('/searchs/:query', async (req, res) => {
   } catch (e) {
     console.log(e);
     res.sendStatus(400);
+  }
+});
+
+router.get('/hashtag/:tag', optionalAuth, async (req, res) => {
+  const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
+  const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
+  try {
+    const { what } = req.query;
+    const tag = req.query.what === 'people' ? `#${req.params.tag}` : req.params.tag;
+
+    let query;
+    switch (what) {
+      case 'images':
+        query = `SELECT posts."id", posts."postId", posts."username", posts."title",
+        posts."description", posts."mediaIncluded", posts."mediaPath",
+        posts."likes", posts."comments", posts."createdAt", users."name", users."username",
+        users."avatarPath" FROM posts INNER JOIN users USING (username) 
+        WHERE posts."mediaIncluded" = 'image' AND :tag = ANY(posts."tags") 
+        OFFSET :skip LIMIT :limit`;
+        break;
+      case 'videos':
+        query = `SELECT posts."id", posts."postId", posts."username", posts."title",
+        posts."description", posts."mediaIncluded", posts."mediaPath",
+        posts."likes", posts."comments", posts."createdAt", users."name", users."username",
+        users."avatarPath" FROM posts INNER JOIN users USING (username) 
+        WHERE posts."mediaIncluded" = 'video' AND 'horror' = ANY(posts."tags")
+        OFFSET :skip LIMIT :limit`;
+        break;
+      case 'people':
+        query = `SELECT id, name, username, "avatarPath", bio FROM users WHERE bio ~ :tag 
+        OFFSET :skip LIMIT :limit`;
+        break;
+      case 'posts':
+      default:
+        query = `SELECT posts."id", posts."postId", posts."username", posts."title",
+        posts."description", posts."mediaIncluded", posts."mediaPath",
+        posts."likes", posts."comments", posts."createdAt", users."name", 
+        users."username", users."avatarPath" FROM posts
+        INNER JOIN users USING (username) WHERE :tag = ANY(posts."tags") OFFSET :skip LIMIT :limit`;
+        break;
+    }
+
+    const rawResult = await sequelize.query(query, {
+      replacements: { tag, skip, limit },
+      raw: true,
+    });
+
+    const result = rawResult[0];
+
+    if (req.user !== undefined) {
+      if (what !== 'people') {
+        const likeRef = Like.getUserLikeIds(result.map((post) => post.postId), req.user.username);
+        const bookRef = Bookmark.getUserBookmarksIds(result.map((post) => post.postId), req.user.username);
+
+        const [likes, books] = await Promise.all([likeRef, bookRef]);
+
+        const authResult = Post.addUserInfo(result, books, likes);
+        return res.send(authResult);
+      }
+
+      if (what === 'people') {
+        const authResult = await User.getUserInfo(result, req.user.username);
+        return res.send(authResult);
+      }
+    }
+
+    return res.send(result);
+  } catch (e) {
+    console.log(e);
+    return res.sendStatus(400);
   }
 });
 
