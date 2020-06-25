@@ -7,6 +7,7 @@ const {
   Model, DataTypes, QueryTypes, Op,
 } = require('sequelize');
 const fs = require('fs');
+const { nanoid } = require('nanoid');
 
 const sequelize = require('../db');
 const Like = require('./like');
@@ -246,7 +247,7 @@ Post.init({
   postId: {
     type: DataTypes.STRING,
     primaryKey: true,
-    defaultValue: DataTypes.UUIDV4,
+    defaultValue: () => nanoid(),
     allowNull: false,
   },
   username: {

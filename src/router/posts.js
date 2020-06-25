@@ -4,10 +4,10 @@
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
-const { v4 } = require('uuid');
 const { Op } = require('sequelize');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
+const { nanoid } = require('nanoid');
 
 const { auth, optionalAuth } = require('../middlewares/auth');
 const Post = require('../models/post');
@@ -65,7 +65,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
     const file = req.files;
     // process image
     if (file.image !== undefined) {
-      const filename = `${v4()}.png`;
+      const filename = `${nanoid()}.png`;
       const filePath = `${postImgPath}/${filename}`;
       await sharp(file.image[0].buffer).png().toFile(filePath);
       sharp(file.image[0].buffer).jpeg()
@@ -79,7 +79,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
 
     // process video
     if (file.video !== undefined) {
-      const filename = `${v4()}.mp4`;
+      const filename = `${nanoid()}.mp4`;
       const filePath = `${videoPath}/${filename}`;
       fs.writeFileSync(filePath, file.video[0].buffer, { encoding: 'ascii' });
 
@@ -204,18 +204,10 @@ router.get('/posts/:username/media', auth, async (req, res) => {
         },
       },
       raw: true,
-      attributes: ['likes', 'comments', 'postId', 'id'],
+      attributes: ['likes', 'comments', 'postId', 'id', 'mediaIncluded'],
       offset: skip,
       limit,
     });
-
-    for (let i = 0; i < media.length; i += 1) {
-      if (videoMp4Pattern.test(media[i].mediaPath)) {
-        media[i].video = true;
-      } else {
-        media[i].video = false;
-      }
-    }
 
     res.status(200).send(media);
   } catch (e) {
@@ -281,7 +273,7 @@ router.post(
       const file = req.files;
       if (file.commentMedia !== undefined) {
         console.log('if of imAGE cooment');
-        const filename = `${v4()}.png`;
+        const filename = `${nanoid()}.png`;
         const filePath = `${postImgPath}/${filename}`;
         await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
         sharp(file.commentMedia[0].buffer).jpeg()
