@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 
+const { ValidationError } = require('sequelize');
 const Block = require('../models/block');
 const User = require('../models/user');
 const Friend = require('../models/friend');
@@ -47,10 +48,12 @@ router.post('/users', async (req, res) => {
       }
     }
 
-    res.status(201).send({ user: userData, token });
+    return res.status(201).send({ user: userData, token });
   } catch (e) {
-    console.log(e);
-    res.status(400).send(e);
+    if (e instanceof ValidationError) {
+      return res.status(400).send({ error: e.message });
+    }
+    return res.status(400).send({ error: 'Something went wrong. please try again later' });
   }
 });
 

@@ -181,7 +181,7 @@ User.init({
     allowNull: false,
     unique: {
       args: true,
-      msg: 'Username already exists, try a different one.',
+      msg: 'Username taken, try a different one.',
     },
     validate: {
       len: [1, 26],
@@ -202,7 +202,7 @@ User.init({
     allowNull: false,
     unique: {
       args: true,
-      msg: 'Email already exists, try loging in instead.',
+      msg: 'Email is already registered. Try logging in instead.',
     },
     validate: {
       isEmail: true,

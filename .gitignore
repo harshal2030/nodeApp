@@ -22,6 +22,7 @@ config.json
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 .VSCodeCounter/
+apidoc/
 
 ecosystem.config.js
 
