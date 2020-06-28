@@ -44,7 +44,7 @@ const mediaMiddleware = upload.fields([
 /**
  * @apiDefine AuthUser
  * @apiHeader (Headers) {String} Authorization auth token for checking user.
- * @apiError (Auth Error) {Object} 401 if user can't be authenticated
+ * @apiError (Error) {Object} 401 if user can't be authenticated
  * @apiErrorExample AuthError:
  * {error: "Please authenticate"}
  */
@@ -70,14 +70,14 @@ const mediaMiddleware = upload.fields([
  */
 
 /**
- * @api {POST} /post posting the content
+ * @api {POST} /post Posting the content
  * @apiDescription Route for registering the post of user in database
  * @apiName Post
  * @apiGroup POST
  * @apiUse AuthUser
  * @apiParam (Body)  {Object} info must contain the post content
- * @apiParam (Body) {String} [info[title]] title of the post
- * @apiParam (Body) {String} info[description] description of the post
+ * @apiParam (Body) {String} [info.title] title of the post
+ * @apiParam (Body) {String} info.description description of the post
  * @apiParam (Body) {multipart} [image] optional image attachement
  * @apiParam (Body) {multipart} [video] optional video attachement
  * @apiParamExample {multipart} attachement and info:
@@ -408,6 +408,7 @@ router.get('/posts/:username/stars', auth, async (req, res) => {
  * @apiUse AuthUser
  * @apiParam (url param) {String} postId of the post on which comment is to be registered
  * @apiParam (body) {Object} info contains comment content
+ * @apiParam (body) {String} info.description description of the comment
  * @apiParam (body) {multipart} commentMedia media attachement to comment body
  * @apiParamExample {multipart} example:
  * {
@@ -519,7 +520,7 @@ router.get('/posts/:postId/comment', auth, async (req, res) => {
 });
 
 /**
- * @api {PATCH} /posts/like register like on a post
+ * @api {PATCH} /posts/like Register like on a post
  * @apiName star a post
  * @apiDescription atuomatically register/unregister like on a post
  * @apiGroup POST

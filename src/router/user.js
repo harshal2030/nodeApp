@@ -12,6 +12,84 @@ const { auth } = require('../middlewares/auth');
 const Tracker = require('../models/tracker');
 const firebaseAdmin = require('../../admin/firebase');
 
+/**
+ * @apiDefine account
+ * @apiParam (body) {Object} [device] contain device info of user
+ * @apiParam (body) {String} [device.os] OS used by the user
+ * @apiParam (body) {String} [device.osVersion] Version of OS used by the user
+ * @apiParam (body) {String} [device.deviceBrand] Brand brand used by the user
+ * @apiParam (body) {String} [device.buildNumber] build number of device used by the user
+ * @apiParam (body) {String} [device.fontScale] font scale of the device used by the user
+ * @apiParam (body) {String} [device.uniqueId] uniqueId of the device used by the user
+ * @apiParam (body) {String} [device.notificationToken] notification token of device used by user
+ * @apiSuccess {Object} user user profile info
+ * @apiSuccess {String} user.name name of the user
+ * @apiSuccess {String} user.username username of the user
+ * @apiSuccess {String} user.dob DOB of the user
+ * @apiSuccess {String} user.createdAt date on which user registered
+ * @apiSuccess {String} user.avatarPath avatar file name of the user
+ * @apiSuccess {String} user.bio bio of the user
+ * @apiSuccess {String} user.location location of the user
+ * @apiSuccess {String} user.headerPhoto header photo file name of the user
+ * @apiSuccess {String} user.website website of the user
+ * @apiSuccess {Number} user.followers followers of the user
+ * @apiSuccess {Number} user.following following of the user
+ * @apiSuccess {String} token A token to be stored and must include in every request
+ * @apiSuccessExample success-response:
+ * {
+ *   "user": {
+ *       "name": "name",
+ *       "username": "",
+ *       "adm_num": null,
+ *       "dob": "2003-01-19",
+ *       "createdAt": "2020-06-14T09:32:57.413Z",
+ *       "avatarPath": "default.png",
+ *       "bio": "I'm in it to",
+ *       "location": "",
+ *       "headerPhoto": null,
+ *       "website": "",
+ *       "followers": 2,
+ *       "following": 0
+ *   },
+ *   "token": "fgdfg43-dfdfgdfg.dfgerewf.sdgsdggdfg"
+ *}
+ */
+
+/**
+ * @api {POST} /users Create Account
+ * @apiName sign up
+ * @apiGroup USER
+ * @apiDescription Register a user for using services provided by us
+ * @apiParam (body) {Object} user must contain the user info.
+ * @apiParam (body) {String} user.name Name of the user
+ * @apiParam (body) {String} user.username username of the user
+ * @apiParam (body) {String} user.email Mail of the user
+ * @apiParam (body) {String} user.dob Birth Date of the user. Must be in yyyy-mm-dd format
+ * @apiParam (body) {String} user.password Pasword for the account.
+ * Must have atleast 6 characters
+ * @apiParamExample {json} Request Example:
+ * {
+ *  user: {
+ *    name: "name",
+ *    username: "username",
+ *    email: "somebody@example.com",
+ *    dob: "2003-01-19",
+ *    password: "shh..supersecret"
+ *  },
+ *  device: { // totally optional
+ *    os: "",
+ *    osVersion: "",
+ *    deviceBrand: "",
+ *    buildNumber: "",
+ *    fontScale: "",
+ *    uniqueId: "",
+ *    notificationToken: "",
+ *  }
+ * }
+ * @apiUse serverError
+ * @apiUse validate
+ * @apiUse account
+ */
 router.post('/users', async (req, res) => {
   /**
      * Route for sigining up a user
@@ -57,6 +135,33 @@ router.post('/users', async (req, res) => {
   }
 });
 
+/**
+ * @api {POST} /users/login Log In
+ * @apiName log in
+ * @apiGroup USER
+ * @apiParam (body) {Object} user must contain the user info.
+ * @apiParam (body) {String} user.username Username of the user
+ * @apiParam (body) {String} user.password password of the user
+ * @apiParamExample {json} Request-example
+ * {
+ *  user: {
+ *    username: "username",
+ *    password: "shh..supersecret"
+ *  },
+ *  device: { // totally optional
+ *    os: "",
+ *    osVersion: "",
+ *    deviceBrand: "",
+ *    buildNumber: "",
+ *    fontScale: "",
+ *    uniqueId: "",
+ *    notificationToken: "",
+ *  }
+ * }
+ * @apiUse account
+ * @apiUse serverError
+ * @apiError (Error) 404 cannot find user with above credentials
+ */
 router.post('/users/login', async (req, res) => {
   /**
      * Route to login the user
@@ -99,6 +204,30 @@ router.post('/users/login', async (req, res) => {
   }
 });
 
+/**
+ * @api {GET} /users/:username Get user profile
+ * @apiDescription Get user profile
+ * @apiName user profile
+ * @apiIgnore
+ * @apiGroup USER
+ * @apiParam (url param) {String} :username username of the user whose profile is to be fetched
+ * @apiSuccess (200) {Object} user object with user props
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *   name: "",
+ *   username: "",
+ *   adm_num: null,
+ *   dob: "2003-01-19",
+ *   createdAt: "",
+ *   avatarPath: "default.png",
+ *   bio: "I'm in it to",
+ *   location: "",
+ *   headerPhoto: null,
+ *   website: "",
+ *   followers: 2,
+ *   following: 0
+ * }
+ */
 // GET /users/username
 router.get('/users/:username', async (req, res) => {
   /**
@@ -120,6 +249,7 @@ router.get('/users/:username', async (req, res) => {
     res.status(404).send();
   }
 });
+
 
 // GET /users/username/full
 router.get('/users/:username/full', auth, async (req, res) => {
@@ -182,6 +312,23 @@ router.get('/users/:username/full', auth, async (req, res) => {
   }
 });
 
+/**
+ * @api {POST} /users/follow Follow a user
+ * @apiName follow user
+ * @apiDescription Route for following a user.
+ * Your body must follow tese standards:-
+ * 1 Must not be identical pair
+ * 2 Must be valid username
+ * @apiGroup USER
+ * @apiParam (body) {String} username username of the user whom to follow
+ * @apiParamExample {json} request-example:
+ * {
+ *  "username": "username.of.user"
+ * }
+ * @apiSuccess (Success) {null} 201
+ * @apiUse AuthUser
+ * @apiError (Error) {null} 400 if your request does not adhere above standards
+ */
 router.post('/users/follow', auth, async (req, res) => {
   try {
     const userExists = await User.findOne({ where: { username: req.body.username } });
@@ -225,7 +372,6 @@ router.post('/users/follow', auth, async (req, res) => {
 
     res.status(201).send();
   } catch (e) {
-    console.log(e);
     res.status(400).send();
   }
 });
