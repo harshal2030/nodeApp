@@ -199,7 +199,6 @@ router.post('/users/login', async (req, res) => {
 
     res.send({ user: userData, token });
   } catch (e) {
-    console.log(e);
     res.status(404).send(e);
   }
 });
@@ -245,7 +244,6 @@ router.get('/users/:username', async (req, res) => {
 
     res.send(userData);
   } catch (e) {
-    console.log(e);
     res.status(404).send();
   }
 });
@@ -317,8 +315,10 @@ router.get('/users/:username/full', auth, async (req, res) => {
  * @apiName follow user
  * @apiDescription Route for following a user.
  * Your body must follow tese standards:-
- * 1 Must not be identical pair
- * 2 Must be valid username
+ * <ol>
+ * <li>Must not be identical pair</li>
+ * <li>Must be valid username who is registered</li>
+ * </ol>
  * @apiGroup USER
  * @apiParam (body) {String} username username of the user whom to follow
  * @apiParamExample {json} request-example:
@@ -376,6 +376,27 @@ router.post('/users/follow', auth, async (req, res) => {
   }
 });
 
+/**
+ * @api {DELETE} /users/follow Unfollow a user
+ * @apiName unfollow user
+ * @apiGroup USER
+ * @apiDescription Route for unfollowing a user. your body must follow these standards
+ * <ol>
+ * <li>Must not be identical pair</li>
+ * <li>Must be valid username who is registered</li>
+ * <li>User making request must be following the described user</li>
+ * </ol>
+ * @apiParam (body) {String} username username of user to unfollow.
+ *
+ * @apiSuccess (Success) {null} 200
+ *
+ * @apiParamExample {json} Request-Example:
+ * {
+ *     "username": "username.of.user"
+ * }
+ * @apiUse AuthUser
+ * @apiError (Error) {null} 400 if your request doesn't adhere above standards
+ */
 router.delete('/users/follow', auth, async (req, res) => {
   try {
     if (req.user.username === req.body.username) {
@@ -395,12 +416,35 @@ router.delete('/users/follow', auth, async (req, res) => {
 
     res.send();
   } catch (e) {
-    console.log(e);
     res.status(400).send();
   }
 });
 
-
+/**
+ * @api {GET} /users/:username/followers?skip=0&limit=20 Get user followers
+ * @apiName get user followers
+ * @apiGroup USER
+ * @apiDescription Route for getting followers of a user.
+ * @apiUse skiplimit
+ * @apiUse AuthUser
+ *
+ * @apiParam (url param) {String} :username username of the user whose followers are to be fetched
+ *
+ * @apiSuccess (Success) {type} array array of users with their props
+ * @apiSuccessExample {json} Success-Response:
+ * [
+ *  ....
+ *  {
+ *    "username": "k",
+ *    "name": "k",
+ *    "avatarPath": "default.png",
+ *    "id": 2,
+ *    "isFollowing": false, // if you are following user
+ *    "follows_you": true // if user is following you
+ *   }
+ *  ....
+ * ]
+ */
 // GET /users/username/followers?skip=0&limit=30
 router.get('/users/:username/followers', auth, async (req, res) => {
   /**
@@ -457,6 +501,31 @@ router.get('/users/:username/followers', auth, async (req, res) => {
   }
 });
 
+/**
+ * @api {GET} /users/:username/following?skip=0&limit=20 Get user followings
+ * @apiName get user following
+ * @apiGroup USER
+ * @apiDescription Route for getting followings of a user.
+ * @apiUse skiplimit
+ * @apiUse AuthUser
+ *
+ * @apiParam (url param) {String} :username username of the user whose followings are to be fetched
+ *
+ * @apiSuccess (Success) {type} array array of users with their props
+ * @apiSuccessExample {json} Success-Response:
+ * [
+ *  ....
+ *  {
+ *    "username": "k",
+ *    "name": "k",
+ *    "avatarPath": "default.png",
+ *    "id": 2,
+ *    "isFollowing": false, // if you are following user
+ *    "follows_you": true // if user is following you
+ *   }
+ *  ....
+ * ]
+ */
 // GET /users/username/following?skip=0&limit=30
 router.get('/users/:username/following', auth, async (req, res) => {
   /**
@@ -513,9 +582,18 @@ router.get('/users/:username/following', auth, async (req, res) => {
   }
 });
 
+/**
+ * @api {POST} /users/logout Logout user
+ * @apiName logout user
+ * @apiGroup USER
+ * @apiDescription logout user from a device
+ * @apiSuccess (Success) {null} 200 if user is successfully loggedout
+ *
+ * @apiUse AuthUser
+ * @apiUse serverError
+ */
 router.post('/users/logout', auth, async (req, res) => {
   try {
-    console.log(`logout ${req.user.username}`);
     req.user.tokens = req.user.tokens.filter((token) => token !== req.token);
 
     await User.update(req.user, {
@@ -534,6 +612,16 @@ router.post('/users/logout', auth, async (req, res) => {
   }
 });
 
+/**
+ * @api {POST} /users/logoutAll Logout user from all devices
+ * @apiName alogoutAll
+ * @apiDescription logoutAll user from all device
+ * @apiGroup USER
+ * @apiSuccess (Success) {null} 200 if user is successfully loggedout
+ *
+ * @apiUse AuthUser
+ * @apiUse serverError
+ */
 router.post('/users/logouAll', auth, async (req, res) => {
   try {
     req.user.token = [];
