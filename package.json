@@ -16,7 +16,12 @@
     "name": "api docs",
     "version": "0.1.0",
     "description": "All api's listed are private api and hence not to be povided for clients",
-    "title": "project - docs"
+    "title": "project - docs",
+    "order": [
+      "USER",
+      "POST",
+      "SETTINGS"
+    ]
   },
   "keywords": [],
   "author": "",

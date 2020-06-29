@@ -5,6 +5,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
 const { v4 } = require('uuid');
+const { ValidationError } = require('sequelize');
 
 const { httpChecker } = require('../utils/regexPatterns');
 const User = require('../models/user');
@@ -27,6 +28,49 @@ const upload = multer({
   },
 });
 
+/**
+ * @api {PUT} /settings/profile Update profile
+ * @apiName update profile
+ * @apiGroup SETTINGS
+ * @apiDescription <p>
+ * This api is used to update a user profile. However, this API will only update following fields
+ * <ol>
+ * <li>name</li>
+ * <li>bio</li>
+ * <li>location</li>
+ * <li>website</li>
+ * <li>dob</li>
+ * <li>avatarPath</li>
+ * <li>headerPhoto</li>
+ * </ol>
+ * </p>
+ *
+ * @apiParam (body) {Object} info this object must contain user text realted content
+ * @apiParam (body) {String} info.name name of the user
+ * @apiParam (body) {String} info.bio bio of the user. max length is 160 characters
+ * @apiParam (body) {String} info.location location of the user
+ * @apiParam (body) {String} info.website website of the user
+ * @apiParam (body) {String} info.dob Birth Date of the user. Must be in yyyy-mm-dd
+ * @apiParam (body) {multipart} avatar user avatar image
+ * @apiParam (body) {multipart} user header photo
+ * @apiParamExample {multipart} Request-Example:
+ * {
+ *  info: {
+ *    name: 'user',
+ *    bio: 'this is user bio',
+ *    location: 'my location',
+ *    dob: ''
+ *  },
+ *  avatar: // avatar image
+ *  header: // header image
+ * }
+ *
+ * @apiSuccess (Success) {null} 200 if profile update was successfull
+ * @apiUse AuthUser
+ * @apiUse validate
+ * @apiUse serverError
+ *
+ */
 const mediaMiddleware = upload.fields([
   { name: 'avatar', maxCount: 1 },
   { name: 'header', maxCount: 1 },
@@ -81,8 +125,10 @@ router.put('/settings/profile', mediaMiddleware, auth, async (req, res) => {
     });
     res.send();
   } catch (e) {
-    console.log(e);
-    res.status(400).send();
+    if (e instanceof ValidationError) {
+      res.status(400).send({ error: e.message });
+    }
+    res.status(500).send();
   }
 });
 
