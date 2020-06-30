@@ -21,11 +21,11 @@ class Like extends Model {
    */
   static async getUserLikes(username, skip = 0, limit = 20) {
     const query = `WITH cte_likes AS (
-            SELECT posts."postId", posts."username", posts."title",
+            SELECT posts."postId", posts."username", posts."title", posts."id", 
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments", posts."createdAt" FROM likes 
             INNER JOIN posts ON posts."postId" = likes."postId"
-            WHERE likes."likedBy" = :username ORDER BY likes."createdAt" DESC
+            WHERE likes."likedBy" = :username
             OFFSET :skip LIMIT :limit
         )
         SELECT users."avatarPath", users."name", cte_likes.* FROM users INNER JOIN cte_likes ON
@@ -75,9 +75,9 @@ class Like extends Model {
    * @return {Array} array of users who liked post
    */
   static async getStarGazers(postId, skip = 0, limit = 20) {
-    const query = `SELECT likes."likedBy" AS "username", users."avatarPath", users."name" FROM
-            likes INNER JOIN users ON likes."likedBy" = users."username"
-            WHERE likes."postId" = :postId ORDER BY likes."createdAt" DESC 
+    const query = `SELECT likes."likedBy" AS "username", users."avatarPath", users."name", users."id" 
+            FROM likes INNER JOIN users ON likes."likedBy" = users."username"
+            WHERE likes."postId" = :postId
             OFFSET :skip LIMIT :limit`;
 
     const result = await sequelize.query(query, {
@@ -109,7 +109,7 @@ Like.init(
   },
   {
     sequelize,
-    timestamps: true,
+    timestamps: false,
     modelName: 'likes',
     freezeTableName: true,
   },

@@ -1,13 +1,14 @@
 /* eslint-disable no-unused-vars */
 const { Model, DataTypes, Op } = require('sequelize');
 const Sequelize = require('sequelize');
-const sequelize = require('../db');
-const User = require('./user');
-const { usernamePattern } = require('../utils/regexPatterns');
-const Friend = require('./friend');
-const Post = require('./post');
-const Like = require('./like');
+const fs = require('fs');
 
+const sequelize = require('../db');
+
+const Friend = require('./friend');
+
+const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
+const { mediaPath } = require('../utils/paths');
 /**
  * Class for blocked account
  * @class Block
@@ -17,7 +18,7 @@ class Block extends Model {
     const block = this.toJSON();
     const { blocked, blockedBy } = block;
 
-    await Friend.destroy({
+    Friend.destroy({
       where: {
         username: {
           [Op.or]: [blocked, blockedBy],
@@ -37,6 +38,30 @@ class Block extends Model {
     cte_likes WHERE cte_likes."postId" = posts."postId"`, {
       replacements: { blocked, blockedBy },
       raw: true,
+    });
+
+    const paths = await sequelize.query(`WITH rawInfo AS (
+      SELECT "parentId", count("parentId") cc FROM posts WHERE username=:blocked
+      AND "parentId" IN (SELECT "postId" FROM posts WHERE username=:blockedBy)
+      GROUP BY "parentId"
+    ), updateCommand AS (
+      UPDATE posts SET "comments" = "comments" - rawInfo."cc" FROM rawInfo
+      WHERE posts."postId" = rawInfo."parentId"
+    )
+    DELETE FROM posts USING rawInfo WHERE rawInfo."parentId" = posts."parentId" 
+    RETURNING "mediaPath"`, {
+      replacements: { blocked, blockedBy },
+      raw: true,
+    });
+
+    paths[0].forEach((path) => {
+      const filePath = mediaPath + path.mediaPath;
+
+      fs.unlink(filePath, (err) => undefined);
+      if (videoMp4Pattern.test(filePath)) {
+        const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
+        fs.unlink(thumbPath, (err) => undefined);
+      }
     });
   }
 }
@@ -86,7 +111,7 @@ Block.init({
     },
   },
   sequelize,
-  timestamps: true,
+  timestamps: false,
   modelName: 'blocks',
   freezeTableName: true,
 });

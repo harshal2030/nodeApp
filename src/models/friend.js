@@ -19,10 +19,10 @@ class Friend extends Model {
      * @return {Array} array of user with their username, name, avatarPath
      */
   static async getUserFollowing(username, skip = 0, limit = 30) {
-    const query = `SELECT users."username", users."name", users."avatarPath" FROM 
+    const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."followed_username" FROM friends
                         WHERE friends."username" = :username
-                        ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)
+                        OFFSET :skip LIMIT :limit)
                     AS followings INNER JOIN users ON users."username" = followings."followed_username"`;
 
     const result = await sequelize.query(query, {
@@ -43,10 +43,10 @@ class Friend extends Model {
      * @return {Array} array of user with their username, name, avatarPath
      */
   static async getUserFollowers(username, skip = 0, limit = 30) {
-    const query = `SELECT users."username", users."name", users."avatarPath" FROM 
+    const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."username" FROM friends
                         WHERE friends."followed_username" = :username
-                        ORDER BY friends."createdAt" DESC OFFSET :skip LIMIT :limit)
+                        OFFSET :skip LIMIT :limit)
                     AS followings INNER JOIN users ON users."username" = followings."username"`;
 
     const result = await sequelize.query(query, {
@@ -94,7 +94,7 @@ Friend.init({
     },
   },
   sequelize,
-  timestamps: true,
+  timestamps: false,
   modelName: 'friends',
   freezeTableName: true,
 });

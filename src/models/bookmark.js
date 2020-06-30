@@ -18,7 +18,9 @@ class Bookmark extends Model {
      */
   static async getUserBookmarks(username, skip = 0, limit = 20) {
     const query = `WITH cte_books AS (
-            SELECT posts.* FROM posts
+            SELECT posts."id", posts."postId", posts."username", posts."title",
+            posts."description", posts."mediaIncluded",
+            posts."likes", posts."comments", posts."createdAt" FROM posts
             INNER JOIN bookmarks
             ON posts."postId" = bookmarks."postId"
             WHERE bookmarks."username"=:username

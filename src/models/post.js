@@ -3,12 +3,19 @@
 /* eslint-disable new-cap */
 /* eslint-disable max-len */
 /* eslint-disable no-tabs */
-const { Model, DataTypes, QueryTypes } = require('sequelize');
+const {
+  Model, DataTypes, QueryTypes, Op,
+} = require('sequelize');
+const fs = require('fs');
+const { nanoid } = require('nanoid');
+
 const sequelize = require('../db');
 const Like = require('./like');
-const { usernamePattern } = require('../utils/regexPatterns');
 const Tag = require('./tag');
-const { videoMp4Pattern } = require('../utils/regexPatterns');
+const User = require('./user');
+
+const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
+const { mediaPath } = require('../utils/paths');
 
 /**
  * Initiates the Post model for the app
@@ -37,8 +44,8 @@ class Post extends Model {
      * @return {number} number of comments
      */
   static async comment(commentBody) {
-    const { type, replyTo } = commentBody;
-    if (type !== 'reply' || replyTo === '') {
+    const { replyTo } = commentBody;
+    if (replyTo === '' || replyTo === null) {
       throw new Error('Not a valid type comment');
     }
     await Post.create(commentBody);
@@ -66,7 +73,7 @@ class Post extends Model {
   posts."replyTo" IS NULL AND friends."username" = :username
         UNION ALL
         SELECT posts."id", posts."postId", posts."username", posts."title",
-  posts."description", posts."mediaIncluded", posts."mediaPath",
+  posts."description", posts."mediaIncluded", posts."mediaPath", 
   posts."likes", posts."comments", posts."createdAt" 
   FROM posts WHERE
         posts."username"=:username AND posts."replyTo" IS NULL
@@ -128,7 +135,7 @@ class Post extends Model {
   static async getUserPosts(username, skip = 0, limit = 10) {
     const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
             posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
-            posts."likes", posts."comments", posts."createdAt" FROM posts
+            posts."likes", posts."comments", posts."createdAt", posts."id" FROM posts
             INNER JOIN users ON
             users."username" = posts."username" WHERE 
             posts."replyTo" IS NULL AND posts."username"=:username 
@@ -152,7 +159,7 @@ class Post extends Model {
      * @return {Array} array of comments
      */
   static async getComments(postId, skip = 0, limit = 10) {
-    const query = `SELECT posts."postId", posts."username", posts."title",
+    const query = `SELECT posts."postId", posts."username", posts."title", posts."id",
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments",
             posts."createdAt", users."name", users."avatarPath" FROM posts INNER JOIN users ON
@@ -185,16 +192,6 @@ class Post extends Model {
     }
 
     for (let i = 0; i < ref.length; i += 1) {
-      ref[i].mediaPath = process.env.TEMPURL + ref[i].mediaPath;
-      ref[i].avatarPath = process.env.TEMPURL + ref[i].avatarPath;
-
-      if (videoMp4Pattern.test(ref[i].mediaPath)) {
-        ref[i].video = true;
-        ref[i].thumbnail = `${process.env.TEMPURL + ref[i].mediaPath}.webp`;
-      } else {
-        ref[i].video = false;
-      }
-
       if (bookmarkIds.includes(ref[i].postId)) {
         ref[i].bookmarked = true;
       } else {
@@ -212,6 +209,34 @@ class Post extends Model {
 
     return data;
   }
+
+  /**
+   * Deletes media of comment of a post
+   * @returns {void}
+   */
+  async removeReplyMedia() {
+    const { postId } = this.toJSON();
+    const rawPaths = await Post.findAll({
+      where: {
+        parentId: postId,
+        mediaPath: {
+          [Op.not]: null,
+        },
+      },
+      attributes: ['mediaPath'],
+      raw: true,
+    }).map((path) => path.mediaPath);
+
+    rawPaths.forEach((path) => {
+      const filePath = mediaPath + path;
+
+      fs.unlink(filePath, (err) => undefined);
+      if (videoMp4Pattern.test(filePath)) {
+        const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
+        fs.unlink(thumbPath, (err) => undefined);
+      }
+    });
+  }
 }
 
 Post.init({
@@ -222,7 +247,7 @@ Post.init({
   postId: {
     type: DataTypes.STRING,
     primaryKey: true,
-    defaultValue: DataTypes.UUIDV4,
+    defaultValue: () => nanoid(),
     allowNull: false,
   },
   username: {
@@ -265,8 +290,8 @@ Post.init({
     },
   },
   mediaIncluded: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    type: DataTypes.STRING(20),
+    allowNull: true,
   },
   mediaPath: {
     type: DataTypes.STRING,
@@ -291,8 +316,20 @@ Post.init({
 }, {
   validate: {
     checkEmptyPost() {
-      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === false) {
+      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === null) {
         throw new Error('Got an empty post');
+      }
+    },
+
+    async checkUser() {
+      const user = await User.findOne({
+        where: {
+          username: this.username,
+        },
+      });
+
+      if (!user) {
+        throw new Error('Post from unregistered user.');
       }
     },
   },
@@ -315,5 +352,6 @@ Post.init({
     },
   },
 });
+
 
 module.exports = Post;

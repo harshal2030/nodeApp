@@ -2,6 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
 const { Model, DataTypes } = require('sequelize');
+const { Op } = require('sequelize');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const sha512 = require('crypto-js/sha512');
@@ -14,6 +15,10 @@ const { usernamePattern } = require('../utils/regexPatterns');
 const keyPath = path.join(__dirname, '../keys/private.key');
 const privateKey = fs.readFileSync(keyPath, 'utf-8');
 
+/**
+ * Intiate class for user model and its methods
+ * @class User
+ */
 class User extends Model {
   /**
     * Checks if user exists with username and password
@@ -54,7 +59,7 @@ class User extends Model {
 
   /**
     * Returns user limited info i.e. Remove sensetive data
-    *
+    * @member {User}
     * @returns {Object} User info for transmission
     */
   async removeSensetiveUserData() {
@@ -107,6 +112,54 @@ class User extends Model {
 
     return result[0];
   }
+
+  /**
+   * Adds isFollowing and follows_you attrbiute to array of objects.
+   * @param {Array} users array of user
+   * @param {String} username username of the requester
+   * @returns {Array} array with added attrbutes to objects
+   */
+  static async getUserInfo(users, username) {
+    const isFollowing = await Friend.findAll({
+      where: {
+        username,
+        followed_username: {
+          [Op.in]: users.map((user) => user.username),
+        },
+      },
+      raw: true,
+      attributes: ['followed_username'],
+    }).map((follo) => follo.followed_username);
+
+    const follows_you = await Friend.findAll({
+      where: {
+        followed_username: username,
+        username: {
+          [Op.in]: users.map((user) => user.username),
+        },
+      },
+      attributes: ['username'],
+      raw: true,
+    }).map((follo_you) => follo_you.username);
+
+    const ref = [...users];
+
+    for (let i = 0; i < ref.length; i += 1) {
+      if (isFollowing.includes(ref[i].username)) {
+        ref[i].isFollowing = true;
+      } else {
+        ref[i].isFollowing = false;
+      }
+
+      if (follows_you.includes(ref[i].username)) {
+        ref[i].follows_you = true;
+      } else {
+        ref[i].follows_you = false;
+      }
+    }
+
+    return ref;
+  }
 }
 
 User.init({
@@ -128,7 +181,7 @@ User.init({
     allowNull: false,
     unique: {
       args: true,
-      msg: 'Username already exists, try a different one.',
+      msg: 'Username taken, try a different one.',
     },
     validate: {
       len: [1, 26],
@@ -149,7 +202,7 @@ User.init({
     allowNull: false,
     unique: {
       args: true,
-      msg: 'Email already exists, try loging in instead.',
+      msg: 'Email is already registered. Try logging in instead.',
     },
     validate: {
       isEmail: true,
@@ -171,7 +224,7 @@ User.init({
   },
   avatarPath: {
     type: DataTypes.STRING,
-    defaultValue: '/images/avatar/default.png',
+    defaultValue: 'default.png',
   },
   headerPhoto: {
     type: DataTypes.STRING,
@@ -224,5 +277,7 @@ User.init({
     },
   },
 });
+
+sequelize.sync();
 
 module.exports = User;
