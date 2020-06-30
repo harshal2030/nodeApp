@@ -5,10 +5,9 @@ const router = express.Router();
 const { Op } = require('sequelize');
 
 const { ValidationError } = require('sequelize');
-const Block = require('../models/block');
 const User = require('../models/user');
 const Friend = require('../models/friend');
-const { auth } = require('../middlewares/auth');
+const { auth, optionalAuth } = require('../middlewares/auth');
 const Tracker = require('../models/tracker');
 const firebaseAdmin = require('../../admin/firebase');
 
@@ -207,7 +206,7 @@ router.post('/users/login', async (req, res) => {
  * @api {GET} /users/:username Get user profile
  * @apiDescription Get user profile
  * @apiName user profile
- * @apiIgnore
+ * @apiUse AuthUser
  * @apiGroup USER
  * @apiParam (url param) {String} :username username of the user whose profile is to be fetched
  * @apiSuccess (200) {Object} user object with user props
@@ -226,9 +225,10 @@ router.post('/users/login', async (req, res) => {
  *   followers: 2,
  *   following: 0
  * }
+ * @apiError (Error) {null} 404 if user is not found
  */
 // GET /users/username
-router.get('/users/:username', async (req, res) => {
+router.get('/users/:username', optionalAuth, async (req, res) => {
   /**
      * Route for fetching user profile
      * 200 for success
@@ -242,9 +242,40 @@ router.get('/users/:username', async (req, res) => {
     }
     const userData = await user.removeSensetiveUserData();
 
-    res.send(userData);
+    if (req.user !== undefined) {
+      const requester = req.user.username;
+      const isFollowing = await Friend.findOne({
+        where: {
+          username: requester,
+          followed_username: req.params.username,
+        },
+      });
+
+      const follows_you = await Friend.findOne({
+        where: {
+          username: req.params.username,
+          followed_username: requester,
+        },
+      });
+
+      if (!follows_you) {
+        userData.follows_you = false;
+      } else {
+        userData.follows_you = true;
+      }
+
+      if (!isFollowing) {
+        userData.isFollowing = false;
+        userData.notify = false;
+      } else {
+        userData.isFollowing = true;
+        userData.notify = isFollowing.notify;
+      }
+    }
+
+    return res.send(userData);
   } catch (e) {
-    res.status(404).send();
+    return res.status(404).send();
   }
 });
 
@@ -260,17 +291,6 @@ router.get('/users/:username/full', auth, async (req, res) => {
     const user = await User.findOne({ where: { username: req.params.username } });
     if (!user) {
       throw new Error('No user found');
-    }
-
-    const blocked = await Block.findOne({
-      where: {
-        blocked: req.user.username,
-        blockedBy: req.params.username,
-      },
-    });
-
-    if (blocked) {
-      return res.status(403).send({ msg: 'You are blocked by requested user' });
     }
 
     const userData = await user.removeSensetiveUserData();

@@ -13,6 +13,43 @@ const { optionalAuth, auth } = require('../middlewares/auth');
 
 const router = express.Router();
 
+/**
+ * @api {GET} /search/:query?criteria=&skip=0&limit=20 Search for a query
+ * @apiName search
+ * @apiGroup SEARCH
+ * @apiDescription endpoint for searching for tags and people.
+ * usefull for giving quick overview of user searched query
+ *
+ * @apiUse skiplimit
+ * @apiParam (url param) {String} :query term which you want to be searched
+ * @apiParam (url query) {String} criteria choose on which basis you want to search.
+ * Supported criteria includes <code>hashtag</code>, <code>people</code>.
+ * Any other will run default algorithm
+ * @apiSuccess {Array} people contains user info with matching query
+ * @apiSuccess {Array} tags conatins tags of searched query.
+ * @apiSuccessExample {json} success-example:
+ * {
+ *   "people": [
+ *       ....
+ *       {
+ *           "username": "",
+ *           "name": "",
+ *           "avatarPath": "default.png"
+ *       }
+ *       ....
+ *   ],
+ *   "tags": [ // tags will be empty if criteria=people
+ *        ....
+ *       {
+ *           "tag": "query",
+ *           "posts": 3 // no. of posts with the given tag
+ *       }
+ *       ....
+ *    ]
+ * }
+ * @apiUse serverError
+ *
+ */
 // GET /search/:query?skip=0&limit=6&criteria=hashtag
 router.get('/searchs/:query', async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
@@ -95,7 +132,7 @@ router.get('/searchs/:query', async (req, res) => {
 
     res.send({ people, tags });
   } catch (e) {
-    res.sendStatus(400);
+    res.sendStatus(500);
   }
 });
 
@@ -141,6 +178,57 @@ router.get('/autocomplete/:query', async (req, res) => {
   }
 });
 
+/**
+ *
+ * @api {GET} /hashtag/:tag?what=people Search for hashtags
+ * @apiName search hashtags
+ * @apiGroup SEARCH
+ * @apiDescription Search for hashtags present in posts and users bio.
+ * @apiUse skiplimit
+ * @apiUse AuthUser
+ * @apiUse serverError
+ *
+ * @apiParam (url param) {String} :tag tag which is to be searched exclude # symbol
+ * @apiParam (url query) {String=images, videos, people, posts} what=posts <p>what to
+ * return from searched tag
+ * @apiSuccess (Success) {Array} 200 array of posts and people according to <code>what</code> query
+ * @apiSuccessExample {json} Success-Example:
+ * [ // when what=posts | images | videos
+ *   ....
+ *  {
+ *     "id": 1,
+ *     "postId": "8zqc7eRxlIj1W0UfRTho-",
+ *     "username": "",
+ *     "title": "",
+ *     "description": "lorem ipsum de isput",
+ *     "mediaIncluded": null,
+ *     "mediaPath": null,
+ *     "likes": 0,
+ *     "comments": 0,
+ *     "createdAt": "2020-06-14T09:34:37.476Z",
+ *     "name": "",
+ *     "avatarPath": "default.png",
+ *     "bookmarked": false,
+ *     "liked": false
+ *   },
+ *   ....
+ * ]
+ *
+ *
+ * [ // when what=people
+ *    ....
+ *   {
+ *     "id": 1,
+ *     "name": "",
+ *     "username": "",
+ *     "avatarPath": "default.png",
+ *     "bio": "in it to",
+ *     "isFollowing": false,
+ *     "follows_you": false
+ *   }
+ *   ....
+ * ]
+ */
 router.get('/hashtag/:tag', optionalAuth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
@@ -209,10 +297,61 @@ router.get('/hashtag/:tag', optionalAuth, async (req, res) => {
 
     return res.send(result);
   } catch (e) {
-    return res.sendStatus(400);
+    return res.sendStatus(500);
   }
 });
 
+/**
+ *
+ * @api {GET} /mention/:user?what=people Search for mentions
+ * @apiName search mentions
+ * @apiGroup SEARCH
+ * @apiDescription Search for mentions present in posts and users bio.
+ * @apiUse skiplimit
+ * @apiUse AuthUser
+ * @apiUse serverError
+ *
+ * @apiParam (url param) {String} :user username of the mentioned user to be searched
+ * @apiParam (url query) {String=images, videos, people, posts} what=posts <p>what to
+ * return from searched username
+ * @apiSuccess (Success) {Array} 200 array of posts and people according to <code>what</code> query
+ * @apiSuccessExample {json} Success-Example:
+ * [ // when what=posts | images | videos
+ *   ....
+ *  {
+ *     "id": 1,
+ *     "postId": "8zqc7eRxlIj1W0UfRTho-",
+ *     "username": "",
+ *     "title": "",
+ *     "description": "lorem ipsum de isput",
+ *     "mediaIncluded": null,
+ *     "mediaPath": null,
+ *     "likes": 0,
+ *     "comments": 0,
+ *     "createdAt": "2020-06-14T09:34:37.476Z",
+ *     "name": "",
+ *     "avatarPath": "default.png",
+ *     "bookmarked": false,
+ *     "liked": false
+ *   },
+ *   ....
+ * ]
+ *
+ *
+ * [ // when what=people
+ *    ....
+ *   {
+ *     "id": 1,
+ *     "name": "",
+ *     "username": "",
+ *     "avatarPath": "default.png",
+ *     "bio": "in it to",
+ *     "isFollowing": false,
+ *     "follows_you": false
+ *   }
+ *   ....
+ * ]
+ */
 router.get('/mention/:user', optionalAuth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
@@ -281,10 +420,61 @@ router.get('/mention/:user', optionalAuth, async (req, res) => {
 
     return res.send(result);
   } catch (e) {
-    return res.sendStatus(400);
+    return res.sendStatus(500);
   }
 });
 
+/**
+ *
+ * @api {GET} /mention/:term?what=people deepsearch for a term
+ * @apiName deepsearch
+ * @apiGroup SEARCH
+ * @apiDescription Search for mentions present in posts and users bio.
+ * @apiUse skiplimit
+ * @apiUse AuthUser
+ * @apiUse serverError
+ *
+ * @apiParam (url param) {String} :term term which you want to search in database.
+ * @apiParam (url query) {String=images, videos, people, posts} what=posts <p>what to
+ * return from searched term
+ * @apiSuccess (Success) {Array} 200 array of posts and people according to <code>what</code> query
+ * @apiSuccessExample {json} Success-Example:
+ * [ // when what=posts | images | videos
+ *   ....
+ *  {
+ *     "id": 1,
+ *     "postId": "8zqc7eRxlIj1W0UfRTho-",
+ *     "username": "",
+ *     "title": "",
+ *     "description": "lorem ipsum de isput",
+ *     "mediaIncluded": null,
+ *     "mediaPath": null,
+ *     "likes": 0,
+ *     "comments": 0,
+ *     "createdAt": "2020-06-14T09:34:37.476Z",
+ *     "name": "",
+ *     "avatarPath": "default.png",
+ *     "bookmarked": false,
+ *     "liked": false
+ *   },
+ *   ....
+ * ]
+ *
+ *
+ * [ // when what=people
+ *    ....
+ *   {
+ *     "id": 1,
+ *     "name": "",
+ *     "username": "",
+ *     "avatarPath": "default.png",
+ *     "bio": "in it to",
+ *     "isFollowing": false,
+ *     "follows_you": false
+ *   }
+ *   ....
+ * ]
+ */
 router.get('/deepsearch/:term', auth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 6 : parseInt(req.query.limit, 10);
@@ -346,7 +536,7 @@ router.get('/deepsearch/:term', auth, async (req, res) => {
     const authResult = Post.addUserInfo(result, books, likes);
     return res.send(authResult);
   } catch (e) {
-    return res.sendStatus(400);
+    return res.sendStatus(500);
   }
 });
 
