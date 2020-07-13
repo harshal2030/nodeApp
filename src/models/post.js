@@ -81,10 +81,7 @@ class Post extends Model {
     )
     SELECT users."avatarPath", users."name", cte_posts.* FROM users
     INNER JOIN cte_posts ON
-    cte_posts."username" = users."username" WHERE cte_posts."username" NOT IN 
-    (
-      SELECT blocks."blocked" FROM blocks WHERE blocks."blockedBy" = :username
-    ) ORDER BY cte_posts."createdAt" DESC`;
+    cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
 
     const result = await sequelize.query(query, {
       replacements: { username, skip, limit },
