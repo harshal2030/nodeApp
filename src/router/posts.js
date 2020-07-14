@@ -151,6 +151,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
     if (e instanceof ValidationError) {
       res.status(400).send({ error: e.message });
     }
+
     res.status(500).send();
   }
 });

@@ -628,7 +628,7 @@ router.post('/users/logout', auth, async (req, res) => {
 
     res.send();
   } catch (e) {
-    res.status(500).send(e);
+    res.status(400).send();
   }
 });
 
@@ -642,7 +642,7 @@ router.post('/users/logout', auth, async (req, res) => {
  * @apiUse AuthUser
  * @apiUse serverError
  */
-router.post('/users/logouAll', auth, async (req, res) => {
+router.post('/users/logoutAll', auth, async (req, res) => {
   try {
     req.user.token = [];
 

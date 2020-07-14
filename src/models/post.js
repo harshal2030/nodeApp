@@ -313,7 +313,9 @@ Post.init({
 }, {
   validate: {
     checkEmptyPost() {
-      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === null) {
+      if (this.title.trim().length === 0
+        && this.description.trim().length === 0
+        && (this.mediaIncluded === undefined || this.mediaIncluded === null)) {
         throw new Error('Got an empty post');
       }
     },
