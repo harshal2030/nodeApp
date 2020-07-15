@@ -116,6 +116,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
       ? [] : post.description.match(handlePattern).map((handle) => handle.slice(1));
 
     const file = req.files;
+
     // process image
     if (file.image !== undefined) {
       const filename = `${nanoid()}.png`;
@@ -692,7 +693,7 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
   try {
-    const user = User.findOne({
+    const user = await User.findOne({
       where: {
         username: req.user.username,
       },

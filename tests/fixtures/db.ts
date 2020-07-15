@@ -52,14 +52,14 @@ export const user2: TestUser = {
     tokens: [sign({ username: 'user2' }, privateKey, { algorithm: 'RS256' })]
 }
 
-const post1: TestPost = {
+export const post1: TestPost = {
     postId: nanoid(),
     username: 'harshal',
     title: 'testing1',
     description: 'this is testin 1'
 }
 
-const post2: TestPost = {
+export const post2: TestPost = {
     postId: nanoid(),
     username: 'user2',
     title: 'testing',
