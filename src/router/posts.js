@@ -119,10 +119,10 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
 
     // process image
     if (file.image !== undefined) {
-      const filename = `${nanoid()}.png`;
+      const filename = `${nanoid()}.webp`;
       const filePath = `${postImgPath}/${filename}`;
-      await sharp(file.image[0].buffer).png().toFile(filePath);
-      sharp(file.image[0].buffer).jpeg()
+      await sharp(file.image[0].buffer).webp({ reductionEffort: 6, force: true }).toFile(filePath);
+      sharp(file.image[0].buffer).webp()
         .blur()
         .resize({ width: 100, height: 100 })
         .toFile(`${imgThumbnailPath}/${filename}`);
@@ -452,9 +452,9 @@ router.post(
 
       const file = req.files;
       if (file.commentMedia !== undefined) {
-        const filename = `${nanoid()}.png`;
+        const filename = `${nanoid()}.webp`;
         const filePath = `${postImgPath}/${filename}`;
-        await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+        await sharp(file.commentMedia[0].buffer).webp({ reductionEffort: 6, force: true }).toFile(filePath);
         sharp(file.commentMedia[0].buffer).jpeg()
           .blur()
           .resize({ width: 100, height: 100 })
