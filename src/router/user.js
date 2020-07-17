@@ -5,6 +5,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 
 const { ValidationError } = require('sequelize');
+
 const User = require('../models/user');
 const Friend = require('../models/friend');
 const { auth, optionalAuth } = require('../middlewares/auth');
@@ -659,6 +660,14 @@ router.post('/users/logoutAll', auth, async (req, res) => {
     });
 
     res.send();
+  } catch (e) {
+    res.status(500).send();
+  }
+});
+
+router.post('/users/token', auth, async (req, res) => {
+  try {
+    res.send(await req.user.removeSensetiveUserData());
   } catch (e) {
     res.status(500).send();
   }
