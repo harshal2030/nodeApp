@@ -159,10 +159,11 @@ describe("Get likes, comments, stars, stargazers tests", () => {
 
     test("Should get posts of a user", async () => {
         const res = await request(app)
-            .get(`/posts/${user1.username}`)
+            .get(`/posts/${user2.username}`)
             .expect(200)
         
-        console.log(res.body)
+        console.log(res.status);
+        console.log(res.body);
     })
 })
 

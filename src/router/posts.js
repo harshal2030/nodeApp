@@ -700,7 +700,7 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
     });
 
     if (!user) {
-      throw new Error();
+      throw new Error('No such user');
     }
     const { username } = req.params;
     const posts = await Post.getUserPosts(username, skip, limit);
@@ -722,45 +722,6 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
   } catch (e) {
     res.status(400).send(e);
   }
-});
-
-// router.get("/posts/:username/:postId", async (req, res) => {
-//     try {
-//         const post = await Post.findOne({
-//             where: {
-//                 postId: req.params.postId,
-//                 username
-//             },
-//             attributes: {
-//                 exclude: ["updatedAt"],
-//             },
-//             raw: true,
-//         });
-
-//         if (!post) {
-//             throw new Error("No such post found");
-//         }
-
-//         if (post.replyTo !== null) {
-//             const parent = await Post.findOne({
-//                 where: {
-//                     postId: post.replyTo,
-//                 },
-//                 attributes: ["username"],
-//                 raw: true,
-//             });
-
-//             post["parentUsername"] = parent.username;
-//         }
-
-//         res.send(post);
-//     } catch (e) {
-//         res.sendStatus(404);
-//     }
-// });
-
-router.get('/posts/trends/:username', auth, (req, res) => {
-  res.send('coming soon');
 });
 
 module.exports = router;

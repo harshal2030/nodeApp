@@ -197,12 +197,6 @@ User.init({
       },
     },
   },
-  adm_num: {
-    type: DataTypes.STRING,
-    validate: {
-      len: [3, 10],
-    },
-  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,

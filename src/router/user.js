@@ -97,6 +97,13 @@ router.post('/users', async (req, res) => {
      * 400 for failure
      * need to add more status
      */
+  const fields = Object.keys(req.body.user);
+  const allowedFields = ['name', 'username', 'email', 'password', 'dob', 'phone'];
+  const isValidField = fields.every((field) => allowedFields.includes(field));
+
+  if (!isValidField) {
+    return res.status(400).send({ error: 'Bad request Parameters' });
+  }
   try {
     const user = await User.create(req.body.user);
     const [token, userData] = await Promise.all([
@@ -168,6 +175,13 @@ router.post('/users/login', async (req, res) => {
      * 200 for success
      * 404 for not found
      */
+  const fields = Object.keys(req.body.user);
+  const validFields = ['email', 'password'];
+  const isValidField = fields.every((field) => validFields.includes(field));
+
+  if (!isValidField) {
+    return res.status(400).send({ error: 'Bad Request Parameters' });
+  }
   try {
     const user = await User.findByCredentials(req.body.user.email, req.body.user.password);
     const [token, userData] = await Promise.all([
@@ -197,9 +211,9 @@ router.post('/users/login', async (req, res) => {
       }
     }
 
-    res.send({ user: userData, token });
+    return res.send({ user: userData, token });
   } catch (e) {
-    res.status(404).send(e);
+    return res.status(404).send(e);
   }
 });
 
