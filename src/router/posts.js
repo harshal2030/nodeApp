@@ -654,7 +654,6 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
   }
 });
 
-
 /**
  * @api {GET} /posts/:username?skip=0&limit=20 Get posts by certain user
  * @apiName user posts
