@@ -5,6 +5,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 
 const { ValidationError } = require('sequelize');
+
 const User = require('../models/user');
 const Friend = require('../models/friend');
 const { auth, optionalAuth } = require('../middlewares/auth');
@@ -96,6 +97,13 @@ router.post('/users', async (req, res) => {
      * 400 for failure
      * need to add more status
      */
+  const fields = Object.keys(req.body.user);
+  const allowedFields = ['name', 'username', 'email', 'password', 'dob', 'phone'];
+  const isValidField = fields.every((field) => allowedFields.includes(field));
+
+  if (!isValidField) {
+    return res.status(400).send({ error: 'Bad request Parameters' });
+  }
   try {
     const user = await User.create(req.body.user);
     const [token, userData] = await Promise.all([
@@ -167,6 +175,13 @@ router.post('/users/login', async (req, res) => {
      * 200 for success
      * 404 for not found
      */
+  const fields = Object.keys(req.body.user);
+  const validFields = ['email', 'password'];
+  const isValidField = fields.every((field) => validFields.includes(field));
+
+  if (!isValidField) {
+    return res.status(400).send({ error: 'Bad Request Parameters' });
+  }
   try {
     const user = await User.findByCredentials(req.body.user.email, req.body.user.password);
     const [token, userData] = await Promise.all([
@@ -196,9 +211,9 @@ router.post('/users/login', async (req, res) => {
       }
     }
 
-    res.send({ user: userData, token });
+    return res.send({ user: userData, token });
   } catch (e) {
-    res.status(404).send(e);
+    return res.status(404).send(e);
   }
 });
 
@@ -628,7 +643,7 @@ router.post('/users/logout', auth, async (req, res) => {
 
     res.send();
   } catch (e) {
-    res.status(500).send(e);
+    res.status(400).send();
   }
 });
 
@@ -642,7 +657,7 @@ router.post('/users/logout', auth, async (req, res) => {
  * @apiUse AuthUser
  * @apiUse serverError
  */
-router.post('/users/logouAll', auth, async (req, res) => {
+router.post('/users/logoutAll', auth, async (req, res) => {
   try {
     req.user.token = [];
 
@@ -659,6 +674,14 @@ router.post('/users/logouAll', auth, async (req, res) => {
     });
 
     res.send();
+  } catch (e) {
+    res.status(500).send();
+  }
+});
+
+router.post('/users/token', auth, async (req, res) => {
+  try {
+    res.send(await req.user.removeSensetiveUserData());
   } catch (e) {
     res.status(500).send();
   }

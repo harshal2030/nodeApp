@@ -53,7 +53,13 @@ class User extends Model {
 
     const token = jwt.sign({ username: user.username.toString() }, privateKey, { algorithm: 'RS256' });
     user.tokens.push(token);
-    await user.save({ fields: ['tokens'] });
+    await User.update({
+      tokens: user.tokens,
+    }, {
+      where: {
+        username: user.username,
+      },
+    });
     return token;
   }
 
@@ -191,12 +197,6 @@ User.init({
       },
     },
   },
-  adm_num: {
-    type: DataTypes.STRING,
-    validate: {
-      len: [3, 10],
-    },
-  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -271,7 +271,10 @@ User.init({
   timestamps: true,
   freezeTableName: true,
   hooks: {
-    beforeSave: (user) => {
+    beforeCreate: (user, ops) => {
+      if (user.password.length <= 6) {
+        throw new Error('Password too short');
+      }
       user.name = validator.escape(user.name);
       user.password = sha512(user.password).toString();
     },
