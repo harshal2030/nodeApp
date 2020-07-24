@@ -6,11 +6,11 @@ const { Op } = require('sequelize');
 
 const { ValidationError } = require('sequelize');
 
-const User = require('../models/user');
-const Friend = require('../models/friend');
+const { User } = require('../models/User');
+const { Friend } = require('../models/Friend');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const Tracker = require('../models/tracker');
-const firebaseAdmin = require('../../admin/firebase');
+const firebaseAdmin = require('../admin/firebase');
 
 /**
  * @apiDefine account
@@ -293,7 +293,6 @@ router.get('/users/:username', optionalAuth, async (req, res) => {
     return res.status(404).send();
   }
 });
-
 
 // GET /users/username/full
 router.get('/users/:username/full', auth, async (req, res) => {

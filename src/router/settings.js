@@ -8,8 +8,8 @@ const { v4 } = require('uuid');
 const { ValidationError } = require('sequelize');
 
 const { httpChecker } = require('../utils/regexPatterns');
-const User = require('../models/user');
-const Friend = require('../models/friend');
+const { User } = require('../models/User');
+const { Friend } = require('../models/Friend');
 const { auth } = require('../middlewares/auth');
 const { avatarPath, headerPath, publicPath } = require('../utils/paths');
 

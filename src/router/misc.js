@@ -4,7 +4,7 @@ const express = require('express');
 const { auth } = require('../middlewares/auth');
 const Bookmark = require('../models/bookmark');
 const Like = require('../models/like');
-const Post = require('../models/post');
+const { Post } = require('../models/Post');
 
 const router = express.Router();
 
@@ -52,6 +52,5 @@ router.get('/misc', auth, async (req, res) => {
     res.status(500).send(e);
   }
 });
-
 
 module.exports = router;

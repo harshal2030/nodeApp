@@ -3,9 +3,9 @@ const { Op } = require('sequelize');
 
 const sequelize = require('../db');
 
-const User = require('../models/user');
+const { User } = require('../models/User');
 const Tag = require('../models/tag');
-const Post = require('../models/post');
+const { Post } = require('../models/Post');
 const Like = require('../models/like');
 const Bookmark = require('../models/bookmark');
 

@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
-const User = require('../models/user');
+const { User } = require('../models/User');
 
 const publicKeyPath = path.join(__dirname, './../keys/public.key');
 const publicKey = fs.readFileSync(publicKeyPath);

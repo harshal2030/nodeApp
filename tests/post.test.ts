@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../src/app';
 import { seedDb, TruncateTables, user1, user2, post1, post2 } from './fixtures/db';
-import Post from '../src/models/post';
+import { Post } from '../src/models/Post';
 import Like from '../src/models/like';
 
 interface PostRequestBody {

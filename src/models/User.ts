@@ -1,32 +1,73 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-unused-vars */
 /* eslint-disable camelcase */
-const { Model, DataTypes } = require('sequelize');
-const { Op } = require('sequelize');
-const validator = require('validator');
-const jwt = require('jsonwebtoken');
-const sha512 = require('crypto-js/sha512');
-const fs = require('fs');
-const path = require('path');
-const sequelize = require('../db');
-const Friend = require('./friend');
-const { usernamePattern } = require('../utils/regexPatterns');
+import { Model, DataTypes, Op } from 'sequelize';
+import validator from 'validator';
+import jwt from 'jsonwebtoken';
+import sha512 from 'crypto-js/sha512';
+import fs from 'fs';
+import path from 'path';
+import sequelize from '../db';
+import { Friend } from './Friend';
+import { usernamePattern } from '../utils/regexPatterns';
 
 const keyPath = path.join(__dirname, '../keys/private.key');
 const privateKey = fs.readFileSync(keyPath, 'utf-8');
+
+interface UserAttr {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  dob: Date;
+  phone: string;
+  avatarPath: string;
+  headerPhoto: string;
+  password: string;
+  bio: string;
+  location: string;
+  website: string;
+  tokens: string[];
+  private: Boolean;
+}
+
+interface UserMinAttr {
+  name: string;
+  username: string;
+  avatarPath: string;
+  follows_you: Boolean;
+  isFollowing: Boolean;
+}
 
 /**
  * Intiate class for user model and its methods
  * @class User
  */
-class User extends Model {
+class User extends Model implements UserAttr {
+  public id!: number;
+  public name!: string;
+  public username!: string;
+  public email!: string;
+  public dob!: Date;
+  public phone!: string;
+  public avatarPath!: string;
+  public headerPhoto!: string;
+  public password!: string;
+  public bio!: string;
+  public location!: string;
+  public website!: string;
+  public tokens!: string[];
+  public private!: Boolean;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
   /**
     * Checks if user exists with username and password
     * @param {String} email email of the user
     * @param {String} password password of the user
     * @returns {Object} user with specified credentials
     */
-  static async findByCredentials(email, password) {
+  static async findByCredentials(email: string, password: string): Promise<UserAttr> {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -48,7 +89,7 @@ class User extends Model {
     * @member {User}
     * @returns {String} A token to be provided to user for authentication
     */
-  async generateAuthToken() {
+  async generateAuthToken(): Promise<string> {
     const user = this;
 
     const token = jwt.sign({ username: user.username.toString() }, privateKey, { algorithm: 'RS256' });
@@ -69,14 +110,13 @@ class User extends Model {
     * @returns {Object} User info for transmission
     */
   async removeSensetiveUserData() {
-    const user = this.toJSON();
+    const user = this;
     const followers = await Friend.count({ where: { followed_username: user.username } });
     const following = await Friend.count({ where: { username: user.username } });
 
     return {
       name: user.name,
       username: user.username,
-      adm_num: user.adm_num,
       dob: user.dob,
       createdAt: user.createdAt,
       avatarPath: user.avatarPath,
@@ -98,7 +138,7 @@ class User extends Model {
      *
      * @returns {Array} array of objects with name, username, avatarPath
      */
-  static async getMatchingUsers(username, searchQuery, limit = 6) {
+  static async getMatchingUsers(username: string, searchQuery: string, limit = 6) {
     const query = `WITH cte_users AS (
             SELECT users."avatarPath", users."name", users."username" FROM users
             INNER JOIN friends ON friends."username" = users."username"
@@ -125,7 +165,7 @@ class User extends Model {
    * @param {String} username username of the requester
    * @returns {Array} array with added attrbutes to objects
    */
-  static async getUserInfo(users, username) {
+  static async getUserInfo(users: UserMinAttr[], username: string) {
     const isFollowing = await Friend.findAll({
       where: {
         username,
@@ -135,7 +175,7 @@ class User extends Model {
       },
       raw: true,
       attributes: ['followed_username'],
-    }).map((follo) => follo.followed_username);
+    }).map((follo: { followed_username: string; }): string => follo.followed_username);
 
     const follows_you = await Friend.findAll({
       where: {
@@ -186,7 +226,7 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false,
     unique: {
-      args: true,
+      name: "username",
       msg: 'Username taken, try a different one.',
     },
     validate: {
@@ -201,7 +241,7 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false,
     unique: {
-      args: true,
+      name: "email",
       msg: 'Email is already registered. Try logging in instead.',
     },
     validate: {
@@ -215,7 +255,7 @@ User.init({
   phone: {
     type: DataTypes.STRING,
     validate: {
-      checkPhoneNumber(value) {
+      checkPhoneNumber(value: string): void {
         if (!validator.isMobilePhone(value)) {
           throw new Error('Phone number is not valid');
         }
@@ -235,10 +275,10 @@ User.init({
     allowNull: false,
     validate: {
       min: {
-        args: 6,
+        args: [6],
         msg: 'Password too short',
       },
-      checkCommonPassword(value) {
+      checkCommonPassword(value: string): void {
         if (value === 'password') {
           throw new Error('Insecure password');
         }
@@ -283,4 +323,4 @@ User.init({
 
 sequelize.sync();
 
-module.exports = User;
+export { User, UserAttr, UserMinAttr };

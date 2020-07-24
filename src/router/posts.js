@@ -10,11 +10,11 @@ const ffmpeg = require('fluent-ffmpeg');
 const { nanoid } = require('nanoid');
 
 const { auth, optionalAuth } = require('../middlewares/auth');
-const Post = require('../models/post');
+const { Post } = require('../models/Post');
 const Bookmark = require('../models/bookmark');
-const User = require('../models/user');
+const { User } = require('../models/User');
 const Like = require('../models/like');
-const Friend = require('../models/friend');
+const { Friend } = require('../models/Friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const {

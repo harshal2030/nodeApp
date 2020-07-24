@@ -1,8 +1,8 @@
-import User from '../../src/models/user';
-import Post from '../../src/models/post';
+import { User } from '../../src/models/User';
+import { Post } from '../../src/models/Post';
 import Bookmark from '../../src/models/bookmark';
 import Like from '../../src/models/like';
-import Friend from '../../src/models/friend';
+import { Friend } from '../../src/models/Friend';
 import Tag from '../../src/models/tag';
 import Tracker from '../../src/models/tracker';
 import { sign } from 'jsonwebtoken';

@@ -2,9 +2,9 @@
 const express = require('express');
 const fs = require('fs');
 
-const User = require('../models/user');
-const Friend = require('../models/friend');
-const Post = require('../models/post');
+const { User } = require('../models/User');
+const { Friend } = require('../models/Friend');
+const { Post } = require('../models/Post');
 const { optionalAuth } = require('../middlewares/auth');
 const {
   publicPath, postImgPath, videoPath, videoThumbnailPath, imgThumbnailPath,

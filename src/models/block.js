@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const sequelize = require('../db');
 
-const Friend = require('./friend');
+const Friend = require('./Friend');
 
 const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const { mediaPath } = require('../utils/paths');
