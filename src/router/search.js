@@ -1,13 +1,13 @@
 const express = require('express');
 const { Op } = require('sequelize');
 
-const sequelize = require('../db');
+const { sequelize } = require('../db');
 
 const { User } = require('../models/User');
-const Tag = require('../models/tag');
+const { Tag } = require('../models/Tag');
 const { Post } = require('../models/Post');
-const Like = require('../models/like');
-const Bookmark = require('../models/bookmark');
+const { Like } = require('../models/Like');
+const { Bookmark } = require('../models/Bookmark');
 
 const { optionalAuth, auth } = require('../middlewares/auth');
 

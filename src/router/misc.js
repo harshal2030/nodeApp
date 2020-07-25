@@ -2,8 +2,8 @@
 const express = require('express');
 
 const { auth } = require('../middlewares/auth');
-const Bookmark = require('../models/bookmark');
-const Like = require('../models/like');
+const { Bookmark } = require('../models/Bookmark');
+const { Like } = require('../models/Like');
 const { Post } = require('../models/Post');
 
 const router = express.Router();

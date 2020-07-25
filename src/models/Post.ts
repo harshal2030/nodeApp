@@ -3,14 +3,13 @@
 /* eslint-disable new-cap */
 /* eslint-disable max-len */
 /* eslint-disable no-tabs */
-import { Model, DataTypes, QueryTypes, Op } from 'sequelize';
+import { Model, DataTypes, Op } from 'sequelize';
 import fs from 'fs';
 import { nanoid } from 'nanoid';
 
-import sequelize from '../db';
-import Like from './like';
-import Tag from './tag';
-import { User } from './User';
+import { sequelize } from '../db';
+import { Like } from './Like';
+import { Tag } from './Tag';
 
 import { usernamePattern, videoMp4Pattern } from '../utils/regexPatterns';
 import { mediaPath } from '../utils/paths';

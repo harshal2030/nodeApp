@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import sha512 from 'crypto-js/sha512';
 import fs from 'fs';
 import path from 'path';
-import sequelize from '../db';
+import { sequelize } from '../db';
 import { Friend } from './Friend';
 import { usernamePattern } from '../utils/regexPatterns';
 
@@ -165,7 +165,7 @@ class User extends Model implements UserAttr {
    * @param {String} username username of the requester
    * @returns {Array} array with added attrbutes to objects
    */
-  static async getUserInfo(users: UserMinAttr[], username: string) {
+  static async getUserInfo(users: UserMinAttr[], username: string): Promise<UserMinAttr[]> {
     const isFollowing = await Friend.findAll({
       where: {
         username,

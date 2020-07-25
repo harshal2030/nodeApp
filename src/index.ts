@@ -1,4 +1,4 @@
-const server = require('./app');
+import server from './app';
 
 const port = process.env.PORT;
 

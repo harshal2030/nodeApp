@@ -1,10 +1,10 @@
 import { User } from '../../src/models/User';
 import { Post } from '../../src/models/Post';
-import Bookmark from '../../src/models/bookmark';
-import Like from '../../src/models/like';
+import { Bookmark } from '../../src/models/Bookmark';
+import { Like } from '../../src/models/Like';
 import { Friend } from '../../src/models/Friend';
-import Tag from '../../src/models/tag';
-import Tracker from '../../src/models/tracker';
+import { Tag } from '../../src/models/Tag';
+import { Tracker } from '../../src/models/Tracker';
 import { sign } from 'jsonwebtoken';
 import { join } from 'path';
 import { readFileSync } from 'fs';

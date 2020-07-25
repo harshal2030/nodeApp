@@ -9,8 +9,8 @@ const { ValidationError } = require('sequelize');
 const { User } = require('../models/User');
 const { Friend } = require('../models/Friend');
 const { auth, optionalAuth } = require('../middlewares/auth');
-const Tracker = require('../models/tracker');
-const firebaseAdmin = require('../admin/firebase');
+const { Tracker } = require('../models/Tracker');
+const { firebaseAdmin } = require('../admin/firebase');
 
 /**
  * @apiDefine account
@@ -135,6 +135,7 @@ router.post('/users', async (req, res) => {
 
     return res.status(201).send({ user: userData, token });
   } catch (e) {
+    console.log(e);
     if (e instanceof ValidationError) {
       return res.status(400).send({ error: e.message });
     }
@@ -290,6 +291,7 @@ router.get('/users/:username', optionalAuth, async (req, res) => {
 
     return res.send(userData);
   } catch (e) {
+    console.log(e);
     return res.status(404).send();
   }
 });

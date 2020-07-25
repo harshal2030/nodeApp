@@ -1,12 +1,22 @@
-const { Model, DataTypes, Op } = require('sequelize');
-const sequelize = require('../db');
-const { usernamePattern } = require('../utils/regexPatterns');
+import { Model, DataTypes, Op } from 'sequelize';
+import { sequelize } from '../db';
+import { usernamePattern } from '../utils/regexPatterns';
+
+interface BookMarkAttr {
+  postId: string;
+  username: string;
+}
 
 /**
  * Class for bookmark table
  * @class Bookmark
  */
-class Bookmark extends Model {
+class Bookmark extends Model implements BookMarkAttr {
+  public postId!: string;
+  public username!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
   /**
      * returns the bookmarks of a specified user.
      *
@@ -16,7 +26,7 @@ class Bookmark extends Model {
      *
      * @return {Array} array of bookmarks
      */
-  static async getUserBookmarks(username, skip = 0, limit = 20) {
+  static async getUserBookmarks(username: string, skip = 0, limit = 20) {
     const query = `WITH cte_books AS (
             SELECT posts."id", posts."postId", posts."username", posts."title",
             posts."description", posts."mediaIncluded",
@@ -49,7 +59,7 @@ class Bookmark extends Model {
      *
      * @return {Array} array of bookmarks limited wrt to posts
      */
-  static async getUserBookmarksIds(postId, username) {
+  static async getUserBookmarksIds(postId: string[], username: string): Promise<string[]> {
     const results = await Bookmark.findAll({
       where: {
         postId: {
@@ -71,7 +81,7 @@ class Bookmark extends Model {
      *
      * @return {Boolean} whether bookmark is created or not
      */
-  static async addBookmark(username, postId) {
+  static async addBookmark(username: string, postId: string): Promise<Boolean> {
     const bookmarks = await Bookmark.count({
       where: {
         username,
@@ -117,4 +127,4 @@ Bookmark.init({
   freezeTableName: true,
 });
 
-module.exports = Bookmark;
+export { BookMarkAttr, Bookmark }

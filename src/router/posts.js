@@ -11,9 +11,9 @@ const { nanoid } = require('nanoid');
 
 const { auth, optionalAuth } = require('../middlewares/auth');
 const { Post } = require('../models/Post');
-const Bookmark = require('../models/bookmark');
+const { Bookmark } = require('../models/Bookmark');
 const { User } = require('../models/User');
-const Like = require('../models/like');
+const { Like } = require('../models/Like');
 const { Friend } = require('../models/Friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
@@ -579,6 +579,7 @@ router.patch('/posts/like', auth, async (req, res) => {
 
     res.send({ likes });
   } catch (e) {
+    console.log(e);
     res.sendStatus(500);
   }
 });
