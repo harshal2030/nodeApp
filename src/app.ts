@@ -1,18 +1,18 @@
 /* eslint-disable no-throw-literal */
 /* eslint-disable camelcase */
-const express = require('express');
+import express, { Request, Response } from 'express';
 
-const path = require('path');
-const http = require('http');
+import path from 'path';
+import http from 'http';
 
 // routers
-const userRouter = require('./router/user');
-const postRouter = require('./router/posts');
-const miscRouter = require('./router/misc');
-const settingRouter = require('./router/settings');
-const multimediaRouter = require('./router/multimedia');
-const trackRouter = require('./router/tracker');
-const searchRouter = require('./router/search');
+import userRouter from './router/user';
+import postRouter from './router/posts';
+import miscRouter from './router/misc';
+import settingRouter from './router/settings';
+import multimediaRouter from './router/multimedia';
+import trackRouter from './router/tracker';
+import searchRouter from './router/search';
 
 const app = express();
 const server = http.createServer(app);
@@ -31,8 +31,8 @@ app.use(miscRouter);
 app.use(settingRouter);
 app.use(trackRouter);
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('Download app now');
 });
 
-module.exports = server;
+export { server }

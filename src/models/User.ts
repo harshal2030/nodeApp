@@ -32,11 +32,12 @@ interface UserAttr {
 }
 
 interface UserMinAttr {
+  id: number;
   name: string;
   username: string;
   avatarPath: string;
-  follows_you: Boolean;
-  isFollowing: Boolean;
+  follows_you?: Boolean;
+  isFollowing?: Boolean;
 }
 
 /**

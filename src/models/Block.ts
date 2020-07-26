@@ -1,21 +1,31 @@
 /* eslint-disable no-unused-vars */
-const { Model, DataTypes, Op } = require('sequelize');
-const Sequelize = require('sequelize');
-const fs = require('fs');
+import { Model, DataTypes, Op } from 'sequelize';
+import fs from 'fs';
 
-const sequelize = require('../db');
+import { sequelize } from '../db';
+import { Friend } from './Friend';
 
-const Friend = require('./Friend');
+import { usernamePattern, videoMp4Pattern } from '../utils/regexPatterns';
+import { mediaPath } from '../utils/paths';
 
-const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
-const { mediaPath } = require('../utils/paths');
+interface BlockAttr {
+  blocked: string;
+  blockedBy: string;
+};
+
 /**
  * Class for blocked account
  * @class Block
  */
-class Block extends Model {
+class Block extends Model implements BlockAttr {
+  public blocked!: string;
+  public blockedBy!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+
   async performBlock() {
-    const block = this.toJSON();
+    const block = this;
     const { blocked, blockedBy } = block;
 
     Friend.destroy({
@@ -54,12 +64,14 @@ class Block extends Model {
       raw: true,
     });
 
-    paths[0].forEach((path) => {
+    const out = paths[0] as unknown as Array<{ mediaPath: string; }>;
+
+    out.forEach((path) => {
       const filePath = mediaPath + path.mediaPath;
 
       fs.unlink(filePath, (err) => undefined);
       if (videoMp4Pattern.test(filePath)) {
-        const thumbPath = `${mediaPath}/videos/thumbnails/${path.slice(8)}.webp`;
+        const thumbPath = `${mediaPath}/videos/thumbnails/${filePath.slice(8)}.webp`;
         fs.unlink(thumbPath, (err) => undefined);
       }
     });
@@ -116,4 +128,4 @@ Block.init({
   freezeTableName: true,
 });
 
-module.exports = Block;
+export { BlockAttr, Block };
