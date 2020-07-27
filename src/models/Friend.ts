@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
 import { DataTypes, Model } from 'sequelize';
@@ -16,11 +17,15 @@ interface FriendAttr {
  */
 class Friend extends Model implements FriendAttr {
   public username!: string;
+
   public followed_username!: string;
+
   public notify!: Boolean;
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
+
   /**
      * Functions to get user's following
      *

@@ -11,7 +11,7 @@ import { mediaPath } from '../utils/paths';
 interface BlockAttr {
   blocked: string;
   blockedBy: string;
-};
+}
 
 /**
  * Class for blocked account
@@ -19,9 +19,11 @@ interface BlockAttr {
  */
 class Block extends Model implements BlockAttr {
   public blocked!: string;
+
   public blockedBy!: string;
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
 
   async performBlock() {

@@ -16,13 +16,21 @@ interface TrackerAttr {
 
 class Tracker extends Model implements TrackerAttr {
   username!: string;
+
   token!: string;
+
   os!: string;
+
   osVersion!: string;
+
   deviceBrand!: string;
+
   buildNumber!: string;
+
   fontScale!: string;
+
   notificationToken!: string;
+
   uniqueId!: string;
 }
 

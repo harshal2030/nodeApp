@@ -13,10 +13,13 @@ interface BookMarkAttr {
  */
 class Bookmark extends Model implements BookMarkAttr {
   public postId!: string;
+
   public username!: string;
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
+
   /**
      * returns the bookmarks of a specified user.
      *
@@ -40,7 +43,6 @@ class Bookmark extends Model implements BookMarkAttr {
         SELECT users."avatarPath", users."name", cte_books.* FROM users
         INNER JOIN cte_books
         ON cte_books."username" = users."username"`;
-
 
     const result = await sequelize.query(query,
       {
@@ -70,7 +72,7 @@ class Bookmark extends Model implements BookMarkAttr {
       attributes: ['postId'],
     });
 
-    return results.map((j) => j.postId);
+    return results.map((j: { postId: string; }): string => j.postId);
   }
 
   /**
@@ -127,4 +129,4 @@ Bookmark.init({
   freezeTableName: true,
 });
 
-export { BookMarkAttr, Bookmark }
+export { BookMarkAttr, Bookmark };

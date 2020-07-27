@@ -39,22 +39,37 @@ interface PostAttr {
  */
 class Post extends Model implements PostAttr {
   public id!: number;
+
   public postId!: string;
+
   public username!: string;
+
   public sharable!: Boolean;
+
   public replyTo!: string | null;
+
   public parentId!: string | null;
+
   public title!: string;
+
   public description!: string;
+
   public mediaIncluded!: string;
+
   public mediaPath!: string;
+
   public likes!: number;
+
   public comments!: number;
+
   public tags!: string[];
+
   public mentions!: string[];
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
+
   /**
     * Updates like table.
     * Increment the likes in post table
@@ -123,6 +138,7 @@ class Post extends Model implements PostAttr {
 
     return result[0];
   }
+
   /**
      * Get posts of a user
      *
@@ -225,9 +241,9 @@ class Post extends Model implements PostAttr {
       },
       attributes: ['mediaPath'],
       raw: true,
-    }).map((path) => path.mediaPath);
+    }).map((path: { mediaPath: string; }): string => path.mediaPath);
 
-    rawPaths.forEach((path) => {
+    rawPaths.forEach((path: string): void => {
       const filePath = mediaPath + path;
 
       fs.unlink(filePath, (err) => undefined);
@@ -342,6 +358,5 @@ Post.init({
     },
   },
 });
-
 
 export { Post, PostAttr };

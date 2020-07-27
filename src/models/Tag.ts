@@ -11,12 +11,17 @@ interface TagAttr {
 
 class Tag extends Model implements TagAttr {
   public id!: number;
+
   public tag!: string;
+
   public type!: string;
+
   public posts!: number;
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
+
   /**
      * Update table based on tag type
      * @param {String} tag tag to be updated in table (prefix included)

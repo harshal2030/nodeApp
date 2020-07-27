@@ -46,22 +46,37 @@ interface UserMinAttr {
  */
 class User extends Model implements UserAttr {
   public id!: number;
+
   public name!: string;
+
   public username!: string;
+
   public email!: string;
+
   public dob!: Date;
+
   public phone!: string;
+
   public avatarPath!: string;
+
   public headerPhoto!: string;
+
   public password!: string;
+
   public bio!: string;
+
   public location!: string;
+
   public website!: string;
+
   public tokens!: string[];
+
   public private!: Boolean;
 
   public readonly createdAt!: Date;
+
   public readonly updatedAt!: Date;
+
   /**
     * Checks if user exists with username and password
     * @param {String} email email of the user
@@ -187,7 +202,7 @@ class User extends Model implements UserAttr {
       },
       attributes: ['username'],
       raw: true,
-    }).map((follo_you) => follo_you.username);
+    }).map((follo_you: { username: string; }): string => follo_you.username);
 
     const ref = [...users];
 
@@ -227,7 +242,7 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false,
     unique: {
-      name: "username",
+      name: 'username',
       msg: 'Username taken, try a different one.',
     },
     validate: {
@@ -242,7 +257,7 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false,
     unique: {
-      name: "email",
+      name: 'email',
       msg: 'Email is already registered. Try logging in instead.',
     },
     validate: {

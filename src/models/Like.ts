@@ -15,7 +15,9 @@ interface LikeAttr {
  */
 class Like extends Model implements LikeAttr {
   public postId!: string;
+
   public likedBy!: string;
+
   /**
    * Function to get posts liked by user
    *
@@ -63,7 +65,7 @@ class Like extends Model implements LikeAttr {
       attributes: ['postId'],
     });
 
-    return result.map((i) => i.postId);
+    return result.map((i: { postId: string; }): string => i.postId);
   }
 
   /**
