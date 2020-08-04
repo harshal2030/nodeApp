@@ -35,4 +35,4 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Download app now');
 });
 
-export { server }
+export { server };
