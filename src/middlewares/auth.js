@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User } = require('../models/User')
+const { User } = require('../models/User');
 
 const publicKeyPath = path.join(__dirname, '../keys/public.key');
 const publicKey = fs.readFileSync(publicKeyPath, 'utf-8');
