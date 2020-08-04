@@ -1,14 +1,31 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
-const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../db');
-const { usernamePattern } = require('../utils/regexPatterns');
+import { DataTypes, Model } from 'sequelize';
+import { sequelize } from '../db';
+import { usernamePattern } from '../utils/regexPatterns';
+
+interface FriendAttr {
+  username: string;
+  followed_username: string;
+  notify: Boolean;
+}
 
 /**
  * Class for friends table
  * @class Friend
  */
-class Friend extends Model {
+class Friend extends Model implements FriendAttr {
+  public username!: string;
+
+  public followed_username!: string;
+
+  public notify!: Boolean;
+
+  public readonly createdAt!: Date;
+
+  public readonly updatedAt!: Date;
+
   /**
      * Functions to get user's following
      *
@@ -18,7 +35,7 @@ class Friend extends Model {
      *
      * @return {Array} array of user with their username, name, avatarPath
      */
-  static async getUserFollowing(username, skip = 0, limit = 30) {
+  static async getUserFollowing(username: string, skip = 0, limit = 30) {
     const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."followed_username" FROM friends
                         WHERE friends."username" = :username
@@ -42,7 +59,7 @@ class Friend extends Model {
      *
      * @return {Array} array of user with their username, name, avatarPath
      */
-  static async getUserFollowers(username, skip = 0, limit = 30) {
+  static async getUserFollowers(username: string, skip = 0, limit = 30) {
     const query = `SELECT users."username", users."name", users."avatarPath", users."id" FROM 
                         (SELECT friends."username" FROM friends
                         WHERE friends."followed_username" = :username
@@ -94,9 +111,9 @@ Friend.init({
     },
   },
   sequelize,
-  timestamps: false,
+  timestamps: true,
   modelName: 'friends',
   freezeTableName: true,
 });
 
-module.exports = Friend;
+export { FriendAttr, Friend };

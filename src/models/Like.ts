@@ -1,15 +1,23 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable max-len */
-const { DataTypes, Model, Op } = require('sequelize');
-const validator = require('validator');
-const sequelize = require('../db');
-const { usernamePattern } = require('../utils/regexPatterns');
+import { DataTypes, Model, Op } from 'sequelize';
+import { sequelize } from '../db';
+import { usernamePattern } from '../utils/regexPatterns';
+
+interface LikeAttr {
+  postId: string;
+  likedBy: string;
+}
 
 /**
  * Class for likes table
  * @class Like
  */
-class Like extends Model {
+class Like extends Model implements LikeAttr {
+  public postId!: string;
+
+  public likedBy!: string;
+
   /**
    * Function to get posts liked by user
    *
@@ -19,7 +27,7 @@ class Like extends Model {
    *
    * @return {Array} array of posts liked by user
    */
-  static async getUserLikes(username, skip = 0, limit = 20) {
+  static async getUserLikes(username: string, skip = 0, limit = 20) {
     const query = `WITH cte_likes AS (
             SELECT posts."postId", posts."username", posts."title", posts."id", 
             posts."description", posts."mediaIncluded", posts."mediaPath",
@@ -36,12 +44,7 @@ class Like extends Model {
       raw: true,
     });
 
-    return result[0].map((post) => {
-      post.title = validator.unescape(post.title);
-      post.description = validator.unescape(post.description);
-
-      return post;
-    });
+    return result[0];
   }
 
   /**
@@ -51,7 +54,7 @@ class Like extends Model {
    * @param {String} username username of user who liked
    * @return {Array} array of postIds liked by user
    */
-  static async getUserLikeIds(postId, username) {
+  static async getUserLikeIds(postId: string[], username: string): Promise<string[]> {
     const result = await Like.findAll({
       where: {
         postId: {
@@ -62,7 +65,7 @@ class Like extends Model {
       attributes: ['postId'],
     });
 
-    return result.map((i) => i.postId);
+    return result.map((i: { postId: string; }): string => i.postId);
   }
 
   /**
@@ -74,7 +77,7 @@ class Like extends Model {
    *
    * @return {Array} array of users who liked post
    */
-  static async getStarGazers(postId, skip = 0, limit = 20) {
+  static async getStarGazers(postId: string, skip = 0, limit = 20) {
     const query = `SELECT likes."likedBy" AS "username", users."avatarPath", users."name", users."id" 
             FROM likes INNER JOIN users ON likes."likedBy" = users."username"
             WHERE likes."postId" = :postId
@@ -109,10 +112,10 @@ Like.init(
   },
   {
     sequelize,
-    timestamps: false,
+    timestamps: true,
     modelName: 'likes',
     freezeTableName: true,
   },
 );
 
-module.exports = Like;
+export { LikeAttr, Like };

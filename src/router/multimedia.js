@@ -2,15 +2,15 @@
 const express = require('express');
 const fs = require('fs');
 
-const User = require('../models/user');
-const Friend = require('../models/friend');
-const Post = require('../models/post');
+const { User } = require('../models/User');
+const { Friend } = require('../models/Friend');
+const { Post } = require('../models/Post');
 const { optionalAuth } = require('../middlewares/auth');
 const {
   publicPath, postImgPath, videoPath, videoThumbnailPath, imgThumbnailPath,
 } = require('../utils/paths');
 const { videoMp4Pattern } = require('../utils/regexPatterns');
-const sequelize = require('../db');
+const { sequelize } = require('../db');
 
 const router = express.Router();
 
@@ -93,6 +93,7 @@ router.get('/media/posts/:postId/images', optionalAuth, async (req, res) => {
 
     res.sendFile(imagePath);
   } catch (e) {
+    console.log(e);
     res.sendStatus(500);
   }
 });
@@ -130,6 +131,7 @@ router.get('/media/posts/:postId/thumbnail', async (req, res) => {
 
     res.sendFile(`${imgThumbnailPath}/${post.mediaPath}`);
   } catch (e) {
+    console.log(e);
     res.status(500).send();
   }
 });

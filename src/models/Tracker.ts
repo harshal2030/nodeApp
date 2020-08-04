@@ -1,8 +1,38 @@
-const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../db');
-const { usernamePattern } = require('../utils/regexPatterns');
+import { DataTypes, Model } from 'sequelize';
+import { sequelize } from '../db';
+import { usernamePattern } from '../utils/regexPatterns';
 
-class Tracker extends Model {}
+interface TrackerAttr {
+  username: string;
+  token: string;
+  os: string;
+  osVersion: string;
+  deviceBrand: string;
+  buildNumber: string;
+  fontScale: string;
+  notificationToken: string;
+  uniqueId: string;
+}
+
+class Tracker extends Model implements TrackerAttr {
+  username!: string;
+
+  token!: string;
+
+  os!: string;
+
+  osVersion!: string;
+
+  deviceBrand!: string;
+
+  buildNumber!: string;
+
+  fontScale!: string;
+
+  notificationToken!: string;
+
+  uniqueId!: string;
+}
 
 Tracker.init({
   username: {
@@ -48,4 +78,4 @@ Tracker.init({
   freezeTableName: true,
 });
 
-module.exports = Tracker;
+export { Tracker, TrackerAttr };

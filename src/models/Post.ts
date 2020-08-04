@@ -3,25 +3,73 @@
 /* eslint-disable new-cap */
 /* eslint-disable max-len */
 /* eslint-disable no-tabs */
-const {
-  Model, DataTypes, QueryTypes, Op,
-} = require('sequelize');
-const fs = require('fs');
-const { nanoid } = require('nanoid');
+import { Model, DataTypes, Op } from 'sequelize';
+import fs from 'fs';
+import { nanoid } from 'nanoid';
 
-const sequelize = require('../db');
-const Like = require('./like');
-const Tag = require('./tag');
-const User = require('./user');
+import { sequelize } from '../db';
+import { Like } from './Like';
+import { Tag } from './Tag';
 
-const { usernamePattern, videoMp4Pattern } = require('../utils/regexPatterns');
-const { mediaPath } = require('../utils/paths');
+import { usernamePattern, videoMp4Pattern } from '../utils/regexPatterns';
+import { mediaPath } from '../utils/paths';
+
+interface PostAttr {
+  id: number;
+  postId: string;
+  username: string;
+  sharable: Boolean;
+  replyTo: string | null;
+  parentId: string | null;
+  title: string;
+  description: string;
+  mediaIncluded: string;
+  mediaPath: string;
+  likes: number;
+  comments: number;
+  tags: string[];
+  mentions: string[];
+  bookmarked?: Boolean;
+  liked?: Boolean;
+}
 
 /**
  * Initiates the Post model for the app
  * @class Post
  */
-class Post extends Model {
+class Post extends Model implements PostAttr {
+  public id!: number;
+
+  public postId!: string;
+
+  public username!: string;
+
+  public sharable!: Boolean;
+
+  public replyTo!: string | null;
+
+  public parentId!: string | null;
+
+  public title!: string;
+
+  public description!: string;
+
+  public mediaIncluded!: string;
+
+  public mediaPath!: string;
+
+  public likes!: number;
+
+  public comments!: number;
+
+  public tags!: string[];
+
+  public mentions!: string[];
+
+  public readonly createdAt!: Date;
+
+  public readonly updatedAt!: Date;
+
   /**
     * Updates like table.
     * Increment the likes in post table
@@ -29,7 +77,7 @@ class Post extends Model {
     * @param {String} likedBy user who liked
     * @return {number} number of likes
     */
-  static async like(postId, likedBy) {
+  static async like(postId: string, likedBy: string): Promise<number> {
     await Like.create({ postId, likedBy });
     Post.increment({ likes: 1 }, { where: { postId } });
 
@@ -43,7 +91,7 @@ class Post extends Model {
      * @param {Object} commentBody body of the comment
      * @return {number} number of comments
      */
-  static async comment(commentBody) {
+  static async comment(commentBody: PostAttr): Promise<number> {
     const { replyTo } = commentBody;
     if (replyTo === '' || replyTo === null) {
       throw new Error('Not a valid type comment');
@@ -62,7 +110,7 @@ class Post extends Model {
     *
     * @return {Array} array of posts for user feed
     */
-  static async getUserFeed(username, skip = 0, limit = 20) {
+  static async getUserFeed(username: string, skip = 0, limit = 20) {
     const query = `WITH cte_posts AS (
         SELECT posts."id", posts."postId", posts."username", posts."title",
   posts."description", posts."mediaIncluded", posts."mediaPath",
@@ -81,42 +129,10 @@ class Post extends Model {
     )
     SELECT users."avatarPath", users."name", cte_posts.* FROM users
     INNER JOIN cte_posts ON
-    cte_posts."username" = users."username" WHERE cte_posts."username" NOT IN 
-    (
-      SELECT blocks."blocked" FROM blocks WHERE blocks."blockedBy" = :username
-    ) ORDER BY cte_posts."createdAt" DESC`;
+    cte_posts."username" = users."username" ORDER BY cte_posts."createdAt" DESC`;
 
     const result = await sequelize.query(query, {
       replacements: { username, skip, limit },
-      raw: QueryTypes.SELECT,
-    });
-
-    return result[0];
-  }
-
-  /**
-     * Get the array of replies recieved in posts.
-     * @param {String} username username of the requester
-     * @param {Array} postIds ids of the post, need to be excluded
-     * @param {number} [skip]
-     * @param {number} [limit]
-     * @return {Array} array of post replies
-     */
-  static async userHomeFeedComments(username, postIds, skip = 0, limit = 20) {
-    const query = `with cte_replies AS (
-            SELECT posts.* FROM posts INNER JOIN friends ON 
-            friends."followed_username" = posts."username"
-            WHERE posts."replyTo" IS NOT NULL AND friends."username"=:username
-            AND posts."replyTo" IN (:postIds)
-            ORDER BY posts."createdAt" OFFSET :skip LIMIT :limit
-        )
-        SELECT users."avatarPath", users."name", cte_replies.* FROM users INNER JOIN
-        cte_replies ON cte_replies."username" = users."username"`;
-
-    const result = await sequelize.query(query, {
-      replacements: {
-        username, postIds, skip, limit,
-      },
       raw: true,
     });
 
@@ -132,7 +148,7 @@ class Post extends Model {
      *
      * @return {Array} array of posts of auser
      */
-  static async getUserPosts(username, skip = 0, limit = 10) {
+  static async getUserPosts(username: string, skip = 0, limit = 10) {
     const query = `SELECT users."avatarPath", users."name", posts."postId", posts."username", 
             posts."title", posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments", posts."createdAt", posts."id" FROM posts
@@ -158,7 +174,7 @@ class Post extends Model {
      *
      * @return {Array} array of comments
      */
-  static async getComments(postId, skip = 0, limit = 10) {
+  static async getComments(postId: string, skip = 0, limit = 10) {
     const query = `SELECT posts."postId", posts."username", posts."title", posts."id",
             posts."description", posts."mediaIncluded", posts."mediaPath",
             posts."likes", posts."comments",
@@ -183,7 +199,7 @@ class Post extends Model {
      *
      * @return {Array} altered array with additional info
      */
-  static addUserInfo(posts, bookmarkIds, likeIds) {
+  static addUserInfo(posts: PostAttr[], bookmarkIds: string[], likeIds: string[]): PostAttr[] {
     const data = [];
     const ref = posts;
 
@@ -215,7 +231,7 @@ class Post extends Model {
    * @returns {void}
    */
   async removeReplyMedia() {
-    const { postId } = this.toJSON();
+    const { postId } = this;
     const rawPaths = await Post.findAll({
       where: {
         parentId: postId,
@@ -225,9 +241,9 @@ class Post extends Model {
       },
       attributes: ['mediaPath'],
       raw: true,
-    }).map((path) => path.mediaPath);
+    }).map((path: { mediaPath: string; }): string => path.mediaPath);
 
-    rawPaths.forEach((path) => {
+    rawPaths.forEach((path: string): void => {
       const filePath = mediaPath + path;
 
       fs.unlink(filePath, (err) => undefined);
@@ -315,21 +331,11 @@ Post.init({
   },
 }, {
   validate: {
-    checkEmptyPost() {
-      if (this.title.trim().length === 0 && this.description.trim().length === 0 && this.mediaIncluded === null) {
+    checkEmptyPost(this: PostAttr) {
+      if (this.title.trim().length === 0
+        && this.description.trim().length === 0
+        && (this.mediaIncluded === undefined || this.mediaIncluded === null)) {
         throw new Error('Got an empty post');
-      }
-    },
-
-    async checkUser() {
-      const user = await User.findOne({
-        where: {
-          username: this.username,
-        },
-      });
-
-      if (!user) {
-        throw new Error('Post from unregistered user.');
       }
     },
   },
@@ -353,5 +359,4 @@ Post.init({
   },
 });
 
-
-module.exports = Post;
+export { Post, PostAttr };

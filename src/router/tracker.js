@@ -1,6 +1,6 @@
 const express = require('express');
 const basic = require('express-basic-auth');
-const Tracker = require('../models/tracker');
+const { Tracker } = require('../models/Tracker');
 
 const middleware = basic({
   users: {

@@ -10,11 +10,11 @@ const ffmpeg = require('fluent-ffmpeg');
 const { nanoid } = require('nanoid');
 
 const { auth, optionalAuth } = require('../middlewares/auth');
-const Post = require('../models/post');
-const Bookmark = require('../models/bookmark');
-const User = require('../models/user');
-const Like = require('../models/like');
-const Friend = require('../models/friend');
+const { Post } = require('../models/Post');
+const { Bookmark } = require('../models/Bookmark');
+const { User } = require('../models/User');
+const { Like } = require('../models/Like');
+const { Friend } = require('../models/Friend');
 const { maxDate, minDate } = require('../utils/dateFunctions');
 const { hashTagPattern, handlePattern, videoMp4Pattern } = require('../utils/regexPatterns');
 const {
@@ -116,12 +116,13 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
       ? [] : post.description.match(handlePattern).map((handle) => handle.slice(1));
 
     const file = req.files;
+
     // process image
     if (file.image !== undefined) {
-      const filename = `${nanoid()}.png`;
+      const filename = `${nanoid()}.webp`;
       const filePath = `${postImgPath}/${filename}`;
-      await sharp(file.image[0].buffer).png().toFile(filePath);
-      sharp(file.image[0].buffer).jpeg()
+      await sharp(file.image[0].buffer).webp({ reductionEffort: 6, force: true }).toFile(filePath);
+      sharp(file.image[0].buffer).webp()
         .blur()
         .resize({ width: 100, height: 100 })
         .toFile(`${imgThumbnailPath}/${filename}`);
@@ -151,6 +152,7 @@ router.post('/posts', auth, mediaMiddleware, async (req, res) => {
     if (e instanceof ValidationError) {
       res.status(400).send({ error: e.message });
     }
+
     res.status(500).send();
   }
 });
@@ -450,9 +452,9 @@ router.post(
 
       const file = req.files;
       if (file.commentMedia !== undefined) {
-        const filename = `${nanoid()}.png`;
+        const filename = `${nanoid()}.webp`;
         const filePath = `${postImgPath}/${filename}`;
-        await sharp(file.commentMedia[0].buffer).png().toFile(filePath);
+        await sharp(file.commentMedia[0].buffer).webp({ reductionEffort: 6, force: true }).toFile(filePath);
         sharp(file.commentMedia[0].buffer).jpeg()
           .blur()
           .resize({ width: 100, height: 100 })
@@ -577,6 +579,7 @@ router.patch('/posts/like', auth, async (req, res) => {
 
     res.send({ likes });
   } catch (e) {
+    console.log(e);
     res.sendStatus(500);
   }
 });
@@ -652,7 +655,6 @@ router.get('/posts/:postId/stargazers', auth, async (req, res) => {
   }
 });
 
-
 /**
  * @api {GET} /posts/:username?skip=0&limit=20 Get posts by certain user
  * @apiName user posts
@@ -691,14 +693,14 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
   const skip = req.query.skip === undefined ? 0 : parseInt(req.query.skip, 10);
   const limit = req.query.limit === undefined ? 10 : parseInt(req.query.limit, 10);
   try {
-    const user = User.findOne({
+    const user = await User.findOne({
       where: {
         username: req.user.username,
       },
     });
 
     if (!user) {
-      throw new Error();
+      throw new Error('No such user');
     }
     const { username } = req.params;
     const posts = await Post.getUserPosts(username, skip, limit);
@@ -718,48 +720,8 @@ router.get('/posts/:username', optionalAuth, async (req, res) => {
 
     res.send(posts);
   } catch (e) {
-    console.log(e);
     res.status(400).send(e);
   }
-});
-
-// router.get("/posts/:username/:postId", async (req, res) => {
-//     try {
-//         const post = await Post.findOne({
-//             where: {
-//                 postId: req.params.postId,
-//                 username
-//             },
-//             attributes: {
-//                 exclude: ["updatedAt"],
-//             },
-//             raw: true,
-//         });
-
-//         if (!post) {
-//             throw new Error("No such post found");
-//         }
-
-//         if (post.replyTo !== null) {
-//             const parent = await Post.findOne({
-//                 where: {
-//                     postId: post.replyTo,
-//                 },
-//                 attributes: ["username"],
-//                 raw: true,
-//             });
-
-//             post["parentUsername"] = parent.username;
-//         }
-
-//         res.send(post);
-//     } catch (e) {
-//         res.sendStatus(404);
-//     }
-// });
-
-router.get('/posts/trends/:username', auth, (req, res) => {
-  res.send('coming soon');
 });
 
 module.exports = router;

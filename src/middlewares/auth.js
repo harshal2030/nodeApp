@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const User = require('../models/user');
+const { User } = require('../models/User');
 
 const publicKeyPath = path.join(__dirname, '../keys/public.key');
 const publicKey = fs.readFileSync(publicKeyPath, 'utf-8');
@@ -27,7 +27,7 @@ const auth = async (req, res, next) => {
     }
 
     req.token = token;
-    req.user = user.toJSON();
+    req.user = user;
     next();
   } catch (e) {
     res.status(401).send({ error: 'Please authenticate' });
