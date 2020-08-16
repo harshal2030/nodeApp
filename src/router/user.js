@@ -135,7 +135,6 @@ router.post('/users', async (req, res) => {
 
     return res.status(201).send({ user: userData, token });
   } catch (e) {
-    console.log(e);
     if (e instanceof ValidationError) {
       return res.status(400).send({ error: e.message });
     }
@@ -291,7 +290,6 @@ router.get('/users/:username', optionalAuth, async (req, res) => {
 
     return res.send(userData);
   } catch (e) {
-    console.log(e);
     return res.status(404).send();
   }
 });
