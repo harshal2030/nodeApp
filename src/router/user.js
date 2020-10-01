@@ -10,7 +10,6 @@ const { User } = require('../models/User');
 const { Friend } = require('../models/Friend');
 const { auth, optionalAuth } = require('../middlewares/auth');
 const { Tracker } = require('../models/Tracker');
-const { firebaseAdmin } = require('../admin/firebase');
 
 /**
  * @apiDefine account
@@ -380,29 +379,6 @@ router.post('/users/follow', auth, async (req, res) => {
         followed_username: req.body.username,
       },
     });
-
-    const tokens = await Tracker.findAll({
-      where: {
-        username: req.body.username,
-      },
-    }).map((token) => token.notificationToken);
-
-    if (tokens.length !== 0) {
-      firebaseAdmin.messaging().sendMulticast({
-        tokens,
-        android: {
-          priority: 'high',
-        },
-        notification: {
-          title: req.user.name,
-          body: `@${req.user.username} is now following you`,
-        },
-        data: {
-          type: 'openProfile',
-          username: req.user.username,
-        },
-      });
-    }
 
     res.status(201).send();
   } catch (e) {
