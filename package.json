@@ -16,7 +16,7 @@
   "apidoc": {
     "name": "api docs",
     "version": "0.1.0",
-    "description": "All api's listed are private api and hence not to be povided for clients",
+    "description": "All api's listed are public api and hence can be used in any of your project",
     "title": "project - docs",
     "order": [
       "USER",
